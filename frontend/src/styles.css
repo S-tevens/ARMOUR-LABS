@@ -466,3 +466,22 @@ tr.row-bad td { background: rgba(229, 72, 77, 0.06); }
 .geographical.overview .geo-substation.is-selected .geo-node-name,
 .geographical.overview .geo-substation:hover .geo-node-name,
 .geographical.overview .geo-substation:focus-visible .geo-node-name { display: block; }
+
+/* Keep the power network visually dominant over the geographical model. */
+.geo-grid-key { position: absolute; z-index: 3; left: 28px; top: 244px; display: flex; flex-wrap: wrap; gap: 8px 14px; max-width: calc(100% - 90px); padding: 9px 12px; background: rgba(255,255,255,.94); border: 1px solid #d8e8f0; border-radius: 10px; font-size: 10px; color: #4d697c; box-shadow: 0 6px 20px #466d8b12; }
+.geo-grid-key span { display: inline-flex; align-items: center; gap: 6px; }
+.geo-grid-key i { width: 22px; border-top: 3px solid #007bc4; }
+.geo-grid-key i.inferred { border-top-style: dashed; }
+.geo-grid-key i.faulted { border-color: #e12e51; }
+.grid-highlight .geo-beacon { width: 48px; height: 48px; border: 2px solid var(--node-color); background: color-mix(in srgb,var(--node-color) 18%,white); box-shadow: 0 0 0 6px #ffffffb3, 0 0 26px color-mix(in srgb,var(--node-color) 45%,transparent); }
+.grid-highlight .geo-beacon i { width: 18px; height: 18px; }
+.grid-highlight .geo-node-name { color: #1d4864; font-size: 11px; font-weight: 700; border-color: #b4d5e6; padding: 5px 9px; }
+.geo-node-voltage { display: block; padding: 2px 7px; border-radius: 0 0 5px 5px; background: #fff; color: #638195; font-size: 9px; font-weight: 600; box-shadow: 0 4px 10px #386b8a12; }
+.geographical.overview .geo-node-voltage { display: none; }
+.geographical.overview.grid-highlight .geo-substation .geo-beacon { width: 30px; height: 30px; }
+.geographical.overview.grid-highlight .geo-substation .geo-beacon i { width: 12px; height: 12px; }
+.geo-substation.is-dark { z-index: 5; }
+.geo-substation.is-dark .geo-node-voltage { color: #c32c4a; }
+@media (max-width: 600px) { .geo-grid-key { left: 20px; top: 330px; gap: 6px 10px; font-size: 9px; padding: 7px 9px; } .geographical .geo-view-controls { right: 65px; gap: 4px; } .geographical .geo-view-controls button { padding: 6px 9px; } }
+.geo-view-controls button[aria-pressed="true"] { color: #087e93; background: #effcff; border-color: #b3e2e9; }
+.grid-highlight ~ .legend-map .dot.cyan { background: #007bc4; }

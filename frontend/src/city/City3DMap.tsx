@@ -6,7 +6,7 @@ import type { FeatureCollection, LineString, Point } from "geojson";
 import type { CityLayout, CityState } from "./types";
 import { architecturalEdges } from "./ArchitecturalEdges";
 
-const COLORS = { ok: "#10a4bd", attention: "#e79b30", dark: "#e04b61", stale: "#8b9caf" };
+const COLORS = { ok: "#007bc4", attention: "#e99416", dark: "#e12e51", stale: "#8b9caf" };
 maplibregl.setWorkerUrl(workerUrl);
 const CITY_CENTER: [number, number] = [77.5946, 12.9716];
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
@@ -46,8 +46,11 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
   const [loaded, setLoaded] = useState(false);
   const [detail, setDetail] = useState(true);
   const [ink, setInk] = useState(true);
+  const [gridFocus, setGridFocus] = useState(true);
   const [building, setBuilding] = useState<{ height: number; levels: string } | null>(null);
-  const [zoom, setZoom] = useState(15.8);
+  const [zoom, setZoom] = useState(14.4);
+  const featured = layout.districts.find(d => d.id === layout.featured);
+  const gridCenter: [number, number] = featured?.lon != null && featured?.lat != null ? [featured.lon, featured.lat] : CITY_CENTER;
 
   useEffect(() => {
     if (!host.current) return;
@@ -73,7 +76,7 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
           if (layer.type === "symbol") layer.paint = { ...layer.paint, "text-color": "#6c7a82", "text-halo-color": "#ffffff", "text-halo-width": 1.5 };
         }
         if (disposed) return;
-        map = new maplibregl.Map({ container: host.current!, style, center: CITY_CENTER, zoom: 15.8, pitch: 58, bearing: -28, maxPitch: 75, minZoom: 9, maxZoom: 19, attributionControl: false, canvasContextAttributes: { antialias: true } });
+        map = new maplibregl.Map({ container: host.current!, style, center: gridCenter, zoom: 14.4, pitch: 58, bearing: -28, maxPitch: 75, minZoom: 9, maxZoom: 19, attributionControl: false, canvasContextAttributes: { antialias: true } });
         mapRef.current = map;
         map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
         map.addControl(new maplibregl.ScaleControl({ maxWidth: 90, unit: "metric" }), "bottom-left");
@@ -87,21 +90,23 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
           map.setLight({ anchor: "viewport", color: "#ffffff", intensity: 0.52, position: [1.5, 190, 45] });
           map.addLayer({ id: "architectural-buildings", type: "fill-extrusion", source: "openmaptiles", "source-layer": "building", minzoom: 13,
             filter: ["!=", ["get", "hide_3d"], true],
-            paint: { "fill-extrusion-color": "#fafbfc", "fill-extrusion-height": ["max", 3, ["to-number", ["get", "render_height"], 9]], "fill-extrusion-base": ["to-number", ["get", "render_min_height"], 0], "fill-extrusion-opacity": 1, "fill-extrusion-vertical-gradient": true } }, labelLayer);
+            paint: { "fill-extrusion-color": "#fafbfc", "fill-extrusion-height": ["max", 3, ["to-number", ["get", "render_height"], 9]], "fill-extrusion-base": ["to-number", ["get", "render_min_height"], 0], "fill-extrusion-opacity": 0.72, "fill-extrusion-vertical-gradient": true } }, labelLayer);
           map.addLayer({ id: "footprint-outlines", type: "line", source: "openmaptiles", "source-layer": "building", minzoom: 14, paint: { "line-color": "#737e86", "line-width": 0.55, "line-opacity": 0.5 } }, "architectural-buildings");
           edgesRef.current = architecturalEdges(map);
           map.addLayer(edgesRef.current.layer);
           map.addSource("live-grid", { type: "geojson", data: EMPTY });
-          map.addLayer({ id: "grid-glow", type: "line", source: "live-grid", paint: { "line-color": ["get", "color"], "line-width": 8, "line-opacity": 0.12, "line-blur": 4 } });
-          map.addLayer({ id: "grid-mapped", type: "line", source: "live-grid", filter: ["==", ["get", "source"], "osm"], paint: { "line-color": ["get", "color"], "line-width": 2.2, "line-opacity": 0.9 } });
-          map.addLayer({ id: "grid-inferred", type: "line", source: "live-grid", filter: ["!=", ["get", "source"], "osm"], paint: { "line-color": ["get", "color"], "line-width": 1.5, "line-opacity": 0.5, "line-dasharray": [3, 3] } });
+          map.addLayer({ id: "grid-glow", type: "line", source: "live-grid", paint: { "line-color": ["get", "color"], "line-width": 16, "line-opacity": 0.32, "line-blur": 6 } });
+          map.addLayer({ id: "grid-casing", type: "line", source: "live-grid", paint: { "line-color": "#ffffff", "line-width": 7, "line-opacity": 0.95 } });
+          map.addLayer({ id: "grid-mapped", type: "line", source: "live-grid", filter: ["==", ["get", "source"], "osm"], layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": ["get", "color"], "line-width": 4.5, "line-opacity": 1 } });
+          map.addLayer({ id: "grid-inferred", type: "line", source: "live-grid", filter: ["!=", ["get", "source"], "osm"], layout: { "line-join": "round" }, paint: { "line-color": ["get", "color"], "line-width": 3.5, "line-opacity": 0.95, "line-dasharray": [2, 2] } });
           map.addSource("flow-particles", { type: "geojson", data: EMPTY });
-          map.addLayer({ id: "flow-particles", type: "circle", source: "flow-particles", paint: { "circle-radius": 2.5, "circle-color": "#19bfd8", "circle-stroke-width": 1, "circle-stroke-color": "#ffffff" } });
+          map.addLayer({ id: "flow-particles", type: "circle", source: "flow-particles", paint: { "circle-radius": 4, "circle-color": ["get", "color"], "circle-stroke-width": 1.5, "circle-stroke-color": "#ffffff" } });
           for (const d of layout.districts) {
             if (d.lat == null || d.lon == null) continue;
             const button = document.createElement("button"); button.className = "geo-substation"; button.type = "button";
-            button.innerHTML = '<span class="geo-beacon"><i></i></span><span class="geo-node-name"></span>';
+            button.innerHTML = '<span class="geo-beacon"><i></i></span><span class="geo-node-name"></span><span class="geo-node-voltage"></span>';
             button.querySelector(".geo-node-name")!.textContent = d.name;
+            button.querySelector(".geo-node-voltage")!.textContent = `${d.voltage_kv ?? "—"} kV · substation`;
             button.setAttribute("aria-label", `Select ${d.name} substation`);
             button.onclick = e => { e.stopPropagation(); latest.current.onSelect(d.id); };
             const marker = new maplibregl.Marker({ element: button, anchor: "bottom" }).setLngLat([d.lon, d.lat]).addTo(map);
@@ -135,7 +140,7 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
             for (const route of routes) {
               const s = states.get(route.id); if (!s || s.status !== "in_service" || Math.abs(s.flow_mw) < 1) continue;
               for (let i = 0; i < 3; i++) { const fraction = reduced ? i / 3 : (time * 0.00006 + i / 3) % 1;
-                dots.features.push({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: routePoint(route, s.flow_mw < 0 ? 1 - fraction : fraction) } }); }
+                dots.features.push({ type: "Feature", properties: { color: s.loading > 0.9 ? COLORS.attention : COLORS.ok }, geometry: { type: "Point", coordinates: routePoint(route, s.flow_mw < 0 ? 1 - fraction : fraction) } }); }
             }
             (map.getSource("flow-particles") as GeoJSONSource)?.setData(dots);
           };
@@ -155,6 +160,15 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
 
   useEffect(() => { updateRef.current?.(); }, [state, selected]);
   useEffect(() => {
+    const map = mapRef.current;
+    if (!loaded || !map?.getLayer("architectural-buildings")) return;
+    map.setPaintProperty("architectural-buildings", "fill-extrusion-opacity", gridFocus ? 0.72 : 1);
+    map.setPaintProperty("grid-glow", "line-opacity", gridFocus ? 0.32 : 0.16);
+    map.setPaintProperty("grid-mapped", "line-width", gridFocus ? 4.5 : 2.5);
+    map.setPaintProperty("grid-inferred", "line-width", gridFocus ? 3.5 : 2);
+    map.setPaintProperty("grid-casing", "line-width", gridFocus ? 7 : 4.5);
+  }, [gridFocus, loaded]);
+  useEffect(() => {
     const map = mapRef.current; const d = layout.districts.find(d => d.id === selected);
     if (map && d && d.lon != null && d.lat != null) map.flyTo({ center: [d.lon, d.lat], zoom: 15.7, pitch: 58, duration: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 1500 });
   }, [selected, layout]);
@@ -165,6 +179,7 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
     map.fitBounds(bounds, { padding: { top: 180, bottom: 130, left: 65, right: 65 }, pitch: 30, bearing: -12, duration: 1400 });
   };
   const cityDetail = () => { orbit.current = false; setOrbiting(false); setBuilding(null); mapRef.current?.flyTo({ center: CITY_CENTER, zoom: 15.8, pitch: 58, bearing: -28, duration: 1400 }); };
+  const focusGrid = () => { setGridFocus(true); orbit.current = false; setOrbiting(false); setBuilding(null); mapRef.current?.flyTo({ center: gridCenter, zoom: 14.4, pitch: 58, bearing: -28, duration: 1400 }); };
   const toggleInk = () => {
     const map = mapRef.current; if (!map?.getLayer("architectural-buildings")) return;
     setInk(!ink);
@@ -173,12 +188,13 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
     map.setPaintProperty("footprint-outlines", "line-opacity", ink ? 0.15 : 0.5);
     map.setLight({ intensity: ink ? 0.3 : 0.52 });
   };
-  return <div className={`city3d geographical ${detail ? "detail" : "overview"} ${ink ? "architectural" : "soft"}`}>
+  return <div className={`city3d geographical ${detail ? "detail" : "overview"} ${ink ? "architectural" : "soft"} ${gridFocus ? "grid-highlight" : ""}`}>
     <div ref={host} className="city3d-canvas" role="application" aria-label="Geographical 3D Bengaluru map. Drag to pan, right-drag to tilt and rotate, scroll to zoom. Real building footprints from OpenStreetMap." />
-    <div className="city3d-heading"><span className="city3d-kicker">ARMOUR / GEOGRAPHICAL DIGITAL TWIN</span><h2>Bengaluru, in real detail.</h2><p><i /> {detail ? "Architectural detail" : "Grid overview"} · {layout.districts.length} live substations</p></div>
+    <div className="city3d-heading"><span className="city3d-kicker">ARMOUR / LIVE POWER NETWORK</span><h2>Bengaluru power grid.</h2><p><i /> {layout.districts.length} substations · {state.lines.filter(l => l.status === "in_service").length} lines in service</p></div>
     <div className="city3d-search"><span aria-hidden="true">⌕</span><select aria-label="Locate a substation" value={selected ?? ""} onChange={e => { if (e.target.value) { setBuilding(null); onSelect(e.target.value); } }}><option value="">Fly to a substation</option>{layout.districts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}</select></div>
-    <div className="geo-view-controls"><button className={detail ? "active" : ""} onClick={cityDetail}>City detail</button><button className={!detail ? "active" : ""} onClick={overview}>Entire grid</button><button aria-pressed={ink} onClick={toggleInk}>{ink ? "Architectural" : "Soft model"}</button></div>
-    <div className="city3d-tools"><button onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in">+</button><button onClick={() => mapRef.current?.zoomOut()} aria-label="Zoom out">−</button><span /><button onClick={cityDetail} aria-label="Reset camera">⌖</button><button className={orbiting ? "active" : ""} aria-pressed={orbiting} onClick={() => { orbit.current = !orbit.current; setOrbiting(orbit.current); }} aria-label="Toggle cinematic orbit">↻</button><button onClick={() => { const parent = host.current?.parentElement?.parentElement; if (document.fullscreenElement) void document.exitFullscreen(); else void parent?.requestFullscreen?.().catch(() => {}); }} aria-label="Expand map fullscreen">⛶</button></div>
+    <div className="geo-view-controls"><button className={gridFocus ? "active" : ""} onClick={focusGrid}>Grid focus</button><button onClick={cityDetail}>City detail</button><button className={!detail ? "active" : ""} onClick={overview}>Entire grid</button><button aria-pressed={gridFocus} onClick={() => setGridFocus(!gridFocus)}>Highlight grid</button><button aria-pressed={ink} onClick={toggleInk}>{ink ? "Architectural" : "Soft model"}</button></div>
+    <div className="geo-grid-key" aria-label="Power grid line legend"><span><i className="mapped" />Mapped power line</span><span><i className="inferred" />Inferred connection</span><span><i className="faulted" />Out of service</span></div>
+    <div className="city3d-tools"><button onClick={() => mapRef.current?.zoomIn()} aria-label="Zoom in">+</button><button onClick={() => mapRef.current?.zoomOut()} aria-label="Zoom out">−</button><span /><button onClick={focusGrid} aria-label="Reset camera">⌖</button><button className={orbiting ? "active" : ""} aria-pressed={orbiting} onClick={() => { orbit.current = !orbit.current; setOrbiting(orbit.current); }} aria-label="Toggle cinematic orbit">↻</button><button onClick={() => { const parent = host.current?.parentElement?.parentElement; if (document.fullscreenElement) void document.exitFullscreen(); else void parent?.requestFullscreen?.().catch(() => {}); }} aria-label="Expand map fullscreen">⛶</button></div>
     <div className="city3d-footer"><span>Right-drag to tilt · Scroll to explore · z{zoom.toFixed(1)}</span><span>OSM footprints · Heights from source or estimates</span></div>
     <div className="geo-data-note">Mapped streets, parks & water · Building heights are not surveyed</div>
     {!loaded && !failed && <div className="geo-loading" role="status">Loading mapped city geometry…</div>}
