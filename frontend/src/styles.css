@@ -385,3 +385,84 @@ tr.row-bad td { background: rgba(229, 72, 77, 0.06); }
 
 /* pale basemap: desaturate and lighten the OpenStreetMap tiles so the live overlay stands out */
 .realmap .leaflet-tile-pane { filter: grayscale(0.9) brightness(1.1) contrast(0.82); opacity: 0.9; }
+
+/* Spatial demo: architectural massing with the live geographical grid above it. */
+.citystage { grid-template-columns: minmax(0, 1fr) 290px; }
+.citystage > .mapwrap { grid-column: 1; grid-row: 1; }
+.citystage > .cityside { grid-column: 2; grid-row: 1 / span 2; }
+.citystage > .happening { grid-column: 1; grid-row: 2; }
+.citystage > .happening .hlist { grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }
+.mapwrap.real.spatial { height: 720px; border: 1px solid rgba(255,255,255,.85); box-shadow: 0 22px 60px -35px #688cab; }
+.mapwrap.real.spatial::before { display: none; }
+.city3d, .city3d-canvas { position: absolute; inset: 0; }
+.city3d { background: #eaf2f8; color: #263f56; }
+.city3d-canvas { overflow: hidden; }
+.city3d-canvas canvas { width: 100%; height: 100%; display: block; touch-action: none; }
+.city3d::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(241,248,253,.85), transparent 25%, transparent 75%, rgba(234,242,248,.8)); }
+.city3d-heading { position: absolute; top: 30px; left: 28px; z-index: 2; pointer-events: none; }
+.city3d-kicker { font-size: 9px; font-weight: 700; letter-spacing: .19em; color: #72889a; }
+.city3d-heading h2 { font-size: clamp(20px, 2.2vw, 30px); font-weight: 500; letter-spacing: -.055em; margin: 8px 0; }
+.city3d-heading p { font-size: 11px; display: flex; align-items: center; gap: 7px; color: #6a8395; margin: 0; }
+.city3d-heading p i { height: 6px; width: 6px; border-radius: 50%; background: #10b1c8; box-shadow: 0 0 12px #38c8da; }
+.map-mode { position: absolute; right: 22px; top: 24px; z-index: 510; display: flex; padding: 4px; gap: 3px; border: 1px solid rgba(255,255,255,.9); border-radius: 12px; background: rgba(228,238,246,.85); backdrop-filter: blur(14px); }
+.map-mode button { border: 0; font: inherit; font-size: 11px; font-weight: 600; background: transparent; color: #73879a; padding: 8px 13px; border-radius: 8px; cursor: pointer; }
+.map-mode button[aria-pressed="true"] { color: #233d51; background: white; box-shadow: 0 3px 10px #a7bed233; }
+.city3d-search { position: absolute; top: 134px; left: 28px; z-index: 3; display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,.85); backdrop-filter: blur(16px); border: 1px solid white; padding: 5px 14px; border-radius: 30px; box-shadow: 0 8px 30px #678ca414; max-width: calc(100% - 100px); }
+.city3d-search > span { font-size: 23px; color: #547087; }
+.city3d-search select { background: transparent; border: 0; color: #617b90; font: inherit; font-size: 12px; width: 190px; max-width: 100%; padding: 8px 0; cursor: pointer; }
+.city3d-tools { position: absolute; z-index: 4; right: 22px; top: 45%; display: flex; flex-direction: column; background: rgba(255,255,255,.88); backdrop-filter: blur(14px); border: 1px solid white; border-radius: 18px; padding: 6px; box-shadow: 0 8px 30px #678ca422; }
+.city3d-tools button { border: 0; background: transparent; color: #425f75; font-size: 23px; width: 36px; height: 39px; border-radius: 11px; cursor: pointer; }
+.city3d-tools button:hover, .city3d-tools button.active { background: #def5fa; color: #009bb9; }
+.city3d-tools > span { height: 1px; background: #deebf2; margin: 5px; }
+.city3d-label { position: absolute; left: 0; top: 0; background: rgba(255,255,255,.9); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,.9); border-radius: 7px; padding: 4px 8px; font: inherit; font-size: 10px; font-weight: 600; color: #526f85; box-shadow: 0 3px 12px #386b8a16; cursor: pointer; white-space: nowrap; }
+.city3d-label[hidden] { display: none; }
+.city3d-label.is-selected { border-color: #12bdd8; background: #f3fdff; color: #0088a1; }
+.city3d-label.is-dark { color: #bc344b; border-color: #f6b6c1; background: #fff4f6; }
+.city3d-label:hover { color: #008eae; border-color: #17b8d4; }
+.city3d-footer { position: absolute; bottom: 26px; left: 28px; right: 28px; z-index: 2; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 10px; color: #758b9c; pointer-events: none; }
+.spatial .legend-map { bottom: 63px; left: 28px; right: auto; z-index: 4; border: 1px solid white; backdrop-filter: blur(12px); font-size: 10px; gap: 12px; }
+.dot.cyan { background: #15b5cc; }
+.mapwrap.real.spatial .alert { top: auto; bottom: 110px; z-index: 5; flex-wrap: wrap; justify-content: center; white-space: normal; width: max-content; max-width: calc(100% - 32px); border-radius: 18px; font-size: 12px; }
+.city3d-fallback { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 15px; align-items: center; justify-content: center; background: #eaf2f8; z-index: 6; }
+.mapwrap:fullscreen { height: 100vh !important; width: 100vw; border-radius: 0; }
+@media (max-width: 1100px) { .citystage { grid-template-columns: minmax(0,1fr); } .citystage > .cityside { grid-column: 1; grid-row: 3; display: grid; grid-template-columns: repeat(auto-fit,minmax(260px,1fr)); } }
+@media (max-width: 600px) { .mapwrap.real.spatial { height: 620px; } .city3d-heading { top: 82px; left: 20px; } .city3d-heading h2 { font-size: 24px; } .city3d-search { top: 182px; left: 20px; } .map-mode { top: 18px; right: 18px; } .city3d-footer { left: 20px; right: 20px; bottom: 18px; } .spatial .legend-map { left: 20px; bottom: 73px; } .city3d-tools { right: 14px; } .spatial .alert { bottom: 118px; max-width: calc(100% - 30px); } }
+
+/* Geographical architectural view: actual vector footprints, no procedural city blocks. */
+.geographical .city3d-canvas { background: #edf0f0; }
+.geographical::after { background: linear-gradient(180deg,rgba(244,248,251,.95),rgba(244,248,251,.35) 19%,transparent 30%,transparent 82%,rgba(241,246,249,.85)); }
+.geographical .maplibregl-canvas { outline: none; }
+.geographical .maplibregl-ctrl-attrib { background: rgba(255,255,255,.9); font-size: 9px; color: #6d7f8e; }
+.geographical .maplibregl-ctrl-bottom-right { right: 14px; bottom: 0; }
+.geographical .maplibregl-ctrl-scale { font-size: 10px; border-color: #94a5af; color: #607280; background: rgba(255,255,255,.75); }
+.geographical .maplibregl-ctrl-bottom-left { bottom: 4px; left: 18px; }
+.geographical .city3d-heading h2 { letter-spacing: -.045em; }
+.geographical .city3d-footer { bottom: 34px; }
+.geo-view-controls { position: absolute; z-index: 4; left: 28px; top: 196px; display: flex; gap: 5px; flex-wrap: wrap; max-width: calc(100% - 90px); }
+.geo-view-controls button { background: rgba(255,255,255,.9); border: 1px solid rgba(255,255,255,.95); padding: 7px 12px; border-radius: 7px; font: inherit; font-size: 10px; color: #647a89; cursor: pointer; box-shadow: 0 4px 18px #58708d12; }
+.geo-view-controls button.active { color: #087e93; background: #effcff; border-color: #b3e2e9; }
+.geo-data-note { position: absolute; z-index: 2; right: 24px; bottom: 91px; max-width: 230px; font-size: 9px; line-height: 1.5; text-align: right; color: #687f8e; padding: 5px 8px; background: rgba(255,255,255,.85); border-radius: 5px; pointer-events: none; }
+.geo-loading { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); font-size: 12px; color: #49677c; padding: 18px 24px; background: white; border-radius: 14px; box-shadow: 0 10px 40px #728ea133; z-index: 5; }
+.geo-substation { --node-color: #10a4bd; display: flex; align-items: center; flex-direction: column; background: transparent; border: 0; padding: 0; cursor: pointer; color: #405d70; font: inherit; }
+.geo-beacon { position: relative; display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid var(--node-color); border-radius: 50%; background: color-mix(in srgb,var(--node-color) 12%,transparent); box-shadow: 0 0 20px color-mix(in srgb,var(--node-color) 25%,transparent); }
+.geo-beacon i { height: 14px; width: 14px; background: var(--node-color); border: 2px solid white; transform: rotate(45deg); box-shadow: 0 4px 12px #49728255; }
+.geo-node-name { background: rgba(255,255,255,.95); border: 1px solid #e2ebf0; border-radius: 6px; padding: 4px 8px; margin-top: 5px; font-size: 10px; white-space: nowrap; box-shadow: 0 3px 12px #386b8a16; }
+.geo-substation.is-dark .geo-node-name { color: #bc344b; border-color: #f4b4c0; }
+.geo-substation.is-dark .geo-beacon { animation: geobeacon 1.8s ease-in-out infinite; }
+.geo-substation.is-selected .geo-node-name { border-color: #10a4bd; color: #087e93; }
+.geo-substation:hover .geo-node-name { border-color: var(--node-color); }
+.geo-building-card { position: absolute; z-index: 5; left: 28px; bottom: 130px; padding: 18px; border: 1px solid white; border-radius: 14px; background: rgba(255,255,255,.95); box-shadow: 0 12px 40px #58708d22; width: 245px; max-width: calc(100% - 60px); }
+.geo-building-card h3 { font-size: 13px; margin: 8px 0; color: #405b6e; }
+.geo-building-card strong { font-size: 28px; font-weight: 500; color: #2e4f66; }
+.geo-building-card p { font-size: 10px; line-height: 1.6; color: #7a8d9b; margin: 8px 0 0; }
+.geo-close { float: right; background: transparent; border: 0; font: inherit; font-size: 20px; color: #7a8d9b; cursor: pointer; }
+@keyframes geobeacon { 50% { box-shadow: 0 0 28px #e04b6155; background: #e04b6122; } }
+@media (max-width: 600px) { .geo-view-controls { top: 243px; left: 20px; } .geo-data-note { bottom: 112px; right: 18px; max-width: 200px; } .geographical .city3d-footer { bottom: 32px; font-size: 9px; } .geo-building-card { bottom: 155px; left: 20px; } }
+@media (prefers-reduced-motion: reduce) { .geo-substation.is-dark .geo-beacon { animation: none; } }
+.geographical.overview .geo-substation .geo-beacon { width: 23px; height: 23px; }
+.geographical.overview .geo-substation .geo-beacon i { width: 10px; height: 10px; }
+.geographical.overview .geo-substation .geo-node-name { display: none; }
+.geographical.overview .geo-substation.is-dark .geo-node-name,
+.geographical.overview .geo-substation.is-selected .geo-node-name,
+.geographical.overview .geo-substation:hover .geo-node-name,
+.geographical.overview .geo-substation:focus-visible .geo-node-name { display: block; }
