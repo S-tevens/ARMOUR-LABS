@@ -17,3 +17,6 @@ dist/
 .DS_Store
 Thumbs.db
 
+
+# Generated datasets (reproducible, see data/README.md)
+data/generated/

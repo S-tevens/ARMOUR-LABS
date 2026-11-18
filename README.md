@@ -8,7 +8,7 @@ ARMOUR LABS is a cyber-physical security platform for Industrial Control Systems
 
 Unlike an intrusion-detection dashboard that only lists alerts, ARMOUR LABS connects a cyber event to its physical consequences.
 
-> **Status:** base project (v0.1). A working end-to-end skeleton: a simple plant simulator, two attack scenarios and one benign fault, a placeholder twin, a threshold baseline detector, a placeholder incident manager, a SQLite event log, a FastAPI + WebSocket backend and a live React dashboard. The ML detector, the independent twin, evidence fusion and a real evaluation are still to be built. Placeholders are marked `PLACEHOLDER` or `TODO` in the code.
+> **Status:** base project (v0.1). A working end-to-end skeleton: a plant simulator with ten scenarios (attacks, faults and a legitimate operator change), staged containment and recovery verification, a labelled dataset generator, a placeholder twin, a threshold baseline detector, a placeholder incident manager, a SQLite event log, a FastAPI + WebSocket backend and a live React dashboard. The ML detector, the independent twin, evidence fusion and a real evaluation are still to be built. Placeholders are marked `PLACEHOLDER` or `TODO` in the code.
 
 ## Quick start
 
@@ -40,6 +40,8 @@ Open http://localhost:5173, pick a scenario under "Attack simulator", watch the 
 cd backend && python -m pytest
 cd frontend && npm run build
 ```
+
+Generate labelled datasets: `cd backend && python -m sim.dataset --out ../data/generated` (see `data/README.md`).
 
 Configuration (environment variables): `ARMOUR_SEED` (default 42), `ARMOUR_TICK_SECONDS` (default 1.0), `ARMOUR_DB` (SQLite path, default in-memory), `VITE_API_URL` (frontend, default http://localhost:8000).
 

@@ -44,12 +44,16 @@ class Runtime:
 
     def approve_response(self, incident_id: str) -> Incident:
         """Simulated containment: restore the safe actuator lineup, then verify recovery."""
-        inc = self.incidents.begin_recovery(incident_id)  # raises KeyError if unknown
-        self.engine.stop_scenario()
+        inc = self.incidents.begin_recovery(incident_id, self.engine.plant.t)  # raises KeyError if unknown
+        self.engine.begin_containment()
         m = {"type": "incident", "data": inc.model_dump()}
         self.store.append("incident", self.engine.plant.t, m["data"])
         self._broadcast(m)
         return inc
+
+    def recovery(self) -> dict:
+        """Latest recovery verification report plus the containment actions taken so far."""
+        return {"report": self.incidents.last_report.to_dict(), "actions": self.engine.containment_log}
 
     # --- pub/sub ---------------------------------------------------------------------
     def subscribe(self) -> asyncio.Queue:
