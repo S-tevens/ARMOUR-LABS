@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/assets/logo.png" alt="Armour Labs" width="260" /></p>
+
 # ARMOUR LABS
 
 **AI-powered digital twin for power-grid cyberattack detection, explanation and recovery.**

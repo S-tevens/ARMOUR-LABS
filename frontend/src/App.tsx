@@ -82,11 +82,8 @@ export default function App() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
-            <path d="M15 2 L26 6 V15 C26 21 21 25.5 15 28 C9 25.5 4 21 4 15 V6 Z" fill="#2F6BFF" />
-            <path d="M15 8 L20 17 H10 Z" fill="#fff" opacity="0.92" />
-          </svg>
-          <span>Armour Labs<small>Power-grid cyber defence simulation</small></span>
+          <img className="brand-logo" src="/logo.png" alt="Armour Labs" height="34" />
+          <small>Power-grid cyber defence simulation</small>
         </div>
         <nav className="tabs glass" aria-label="Views">
           {TABS.map((x) => (
