@@ -111,6 +111,11 @@ export default function IsoPlant({ t, incident }: { t: Telemetry; incident: Inci
         </g>
       ))}
 
+      {/* junction nodes */}
+      {[P(0.85, 0, pipeZ), P(5, 0, pipeZ), P(5, -2.55, pipeZ), P(5, -4.25, pipeZ), P(5, -6.2, pipeZ)].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={4} className={`node ${blocked ? "bad" : "ok"}`} />
+      ))}
+
       {/* equipment, back to front */}
       <Pump u={5} v={-5.2} on={t.pump2} />
       <Tank u={0} v={0} r={0.85} h={104} level={t.tank1_level} id="t1" />

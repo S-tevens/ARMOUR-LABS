@@ -110,7 +110,7 @@ Press `Ctrl+C` in each terminal.
 
 ```bash
 cd backend
-python -m pytest            # backend: 22 tests
+python -m pytest            # backend: 23 tests
 cd ../frontend
 npm run build               # frontend: type-check and production build
 ```

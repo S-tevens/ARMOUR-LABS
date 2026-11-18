@@ -191,3 +191,12 @@ def test_recovery_endpoint_after_approved_containment():
         body = c.get("/recovery").json()
         assert body["report"]["state"] == "recovered" and body["actions"]
         assert len(c.get("/scenarios").json()) == len(scenarios.SCENARIO_INFO)
+
+
+def test_replay_only_records_normal_operation():
+    e = warmed(n=60)
+    e.start_scenario("unauthorised_valve_close")
+    run(e, 30)  # plant is now reporting attack values
+    e.start_scenario("replay_attack")  # hard-resets first, then replays what was recorded while normal
+    t = run(e, 15).telemetry
+    assert t.pressure < 2.6 and t.flow > 90

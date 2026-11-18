@@ -77,7 +77,7 @@ class Plant:
 
     def start_replay(self, window: int = 30) -> None:
         """Start reporting previously recorded pressure/flow readings instead of live ones."""
-        hist = list(self._obs_hist)[-window:] or [{"pressure": self.pressure, "flow": self.flow}]
+        hist = list(self._obs_hist)[-window:] or [{"pressure": 2.1, "flow": 110.0}]  # nominal if nothing recorded
         self.replay = {"pressure": [h["pressure"] for h in hist], "flow": [h["flow"] for h in hist], "i": 0}
 
     def clear_sensor_faults(self) -> None:
@@ -132,6 +132,16 @@ class Plant:
         self.tick += 1
         return self.observe()
 
+    def _is_nominal(self) -> bool:
+        return (
+            self.replay is None
+            and self.stale_prob == 0.0
+            and self.valve_open_fraction == 1.0
+            and self.pump1_speed >= 0.95
+            and self.filter_clog < 0.05
+            and all(abs(b) < 1e-9 for b in self.sensor_bias.values())
+        )
+
     def true_state(self) -> dict[str, float | bool]:
         """Ground truth (for tests and evaluation only; detectors must not read this)."""
         return {
@@ -166,7 +176,8 @@ class Plant:
             r["i"] += 1
         elif self.stale_prob > 0 and self._last_vals is not None and self.rng.random() < self.stale_prob:
             vals = dict(self._last_vals)  # missed update: sensors repeat their previous report
-        if self.replay is None:
+        if self._is_nominal():
+            # An attacker can only record what the plant reported while it was running normally.
             self._obs_hist.append({"pressure": vals["pressure"], "flow": vals["flow"]})
         self._last_vals = vals
         return Telemetry(

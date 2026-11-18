@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { WS_URL } from "./api";
+import { API_URL, WS_URL } from "./api";
 import type { Incident, NetworkEvent, Scores, StreamMessage, Telemetry, TwinState } from "./types";
 
 export const HISTORY = 90;
@@ -46,7 +46,16 @@ export function useStream(): StreamState {
 
     const connect = () => {
       ws = new WebSocket(WS_URL);
-      ws.onopen = () => setState((s) => ({ ...s, connected: true }));
+      ws.onopen = () => {
+        setState((s) => ({ ...s, connected: true }));
+        // Pick up incidents that opened before this page loaded (reload, late join).
+        fetch(`${API_URL}/incidents`)
+          .then((r) => r.json() as Promise<Incident[]>)
+          .then((list) =>
+            setState((s) => ({ ...s, incidents: { ...Object.fromEntries(list.map((i) => [i.id, i])), ...s.incidents } })),
+          )
+          .catch(() => undefined);
+      };
       ws.onclose = () => {
         setState((s) => ({ ...s, connected: false }));
         if (!closed) timer = window.setTimeout(connect, 1500);

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import Meter from "./Meter";
 import { HISTORY } from "../useStream";
 import type { Telemetry, TwinState } from "../types";
 
@@ -19,6 +20,7 @@ export default function TwinChart({ history, twinHistory }: { history: Telemetry
   const obs = history.map((h, i) => `${X(i).toFixed(1)},${Y(h[key]).toFixed(1)}`);
   const m = Math.min(history.length, twinHistory.length);
   const exp = twinHistory.slice(-m).map((t, i) => `${X(n - m + i).toFixed(1)},${Y(t.expected[key]).toFixed(1)}`);
+  const within = m ? twinHistory.slice(-m).filter((t) => Math.abs(t.norm_residual[key] ?? 0) <= 4).length / m : 1;
   const last = history[n - 1];
   const lastExp = twinHistory[twinHistory.length - 1];
 
@@ -35,8 +37,11 @@ export default function TwinChart({ history, twinHistory }: { history: Telemetry
         </div>
       </header>
       <div className="chart-readout">
-        <span className="numeral sm">{last ? last[key].toFixed(key === "flow" ? 0 : 2) : "–"}<small>{c.unit}</small></span>
-        <span className="sub">{lastExp ? `Twin expects ${lastExp.expected[key].toFixed(key === "flow" ? 0 : 2)}` : ""}</span>
+        <div>
+          <span className="numeral sm">{last ? last[key].toFixed(key === "flow" ? 0 : 2) : "–"}<small>{c.unit}</small></span>
+          <span className="sub">{lastExp ? `Twin expects ${lastExp.expected[key].toFixed(key === "flow" ? 0 : 2)} ${c.unit}` : ""}</span>
+        </div>
+        <Meter label="Within twin tolerance" display={`${Math.round(within * 100)}%`} value={within} tone={within > 0.9 ? "green" : within > 0.6 ? "amber" : "red"} />
       </div>
       <svg viewBox={`0 0 ${W} ${Ht}`} className="line-chart" role="img" aria-label={`${c.label} over the last ${n} seconds`}>
         <defs>

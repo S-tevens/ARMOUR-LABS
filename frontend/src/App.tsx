@@ -33,6 +33,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [scenarios, setScenarios] = useState<ScenarioInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     getScenarios().then(setScenarios).catch(() => setError("Can't reach the backend on port 8000. Start it with: uvicorn main:app"));
@@ -70,12 +71,18 @@ export default function App() {
 
       {tab === "dashboard" && (
         <main className="dash">
-          <SensorStrip history={s.history} twin={s.twin} />
+          <section className="pagehead">
+            <div className="page-title">
+              <h1>Water treatment plant</h1>
+              <span className="muted small">Simulated plant, running for {t ? Math.round(t.t) : 0} s</span>
+            </div>
+            <SensorStrip history={s.history} twin={s.twin} />
+          </section>
           <div className="stage">
-            <ControllerRail t={t} />
+            <ControllerRail t={t} twin={s.twin} />
             <section className={`hero ${active ? "alarm" : ""}`} aria-label="Live plant">
               {t ? (
-                <>
+                <div className="scene" style={{ transform: `scale(${zoom})` }}>
                   <IsoPlant t={t} incident={active} />
                   <Callout at={pct(0, 0, 150)} title="Tank 1">{t.tank1_level.toFixed(1)}% full</Callout>
                   <Callout at={pct(5, -3.4, 150)} title="Tank 2">{t.tank2_level.toFixed(1)}% full</Callout>
@@ -83,10 +90,17 @@ export default function App() {
                   <Callout at={pct(5, -1.5, 86)} title={`Valve 1 ${t.valve1 ? "open" : "closed"}`} tone={t.valve1 ? "" : "bad"}>
                     {t.valve1 ? "PLC-02 normal" : active?.evidence.find((e) => e.type === "unauthorised_event")?.text ?? "Closed outside the schedule"}
                   </Callout>
-                </>
+                </div>
               ) : (
                 <p className="empty hero-empty">Waiting for plant telemetry…</p>
               )}
+              <div className="zoom glass" role="group" aria-label="Zoom plant view">
+                <button aria-label="Zoom in" onClick={() => setZoom((z) => Math.min(1.8, +(z + 0.2).toFixed(1)))}>+</button>
+                <button aria-label="Zoom out" onClick={() => setZoom((z) => Math.max(0.8, +(z - 0.2).toFixed(1)))}>&minus;</button>
+                <button aria-label="Reset zoom" onClick={() => setZoom(1)}>
+                  <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M1.5 5V1.5H5M9 1.5h3.5V5M12.5 9v3.5H9M5 12.5H1.5V9" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+              </div>
               <SimulatorCard
                 scenarios={scenarios}
                 onStart={(n) => run(() => startScenario(n))}
@@ -101,7 +115,7 @@ export default function App() {
               )}
             </section>
           </div>
-          <div className="lower">
+          <div className={`lower ${active ? "alarm" : ""}`}>
             <TwinChart history={s.history} twinHistory={s.twinHistory} />
             <ScoreBars scores={s.scores} />
           </div>
