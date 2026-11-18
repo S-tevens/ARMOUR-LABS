@@ -3,15 +3,16 @@ import Meter from "./Meter";
 import { HISTORY } from "../useStream";
 import type { Telemetry, TwinState } from "../types";
 
-type Key = "pressure" | "flow";
-const CFG: Record<Key, { label: string; unit: string; domain: [number, number]; ticks: number[] }> = {
-  pressure: { label: "Pressure", unit: "bar", domain: [0, 6], ticks: [0, 2, 4, 6] },
-  flow: { label: "Flow", unit: "L/min", domain: [0, 140], ticks: [0, 50, 100, 140] },
+type Key = "grid_import_kw" | "frequency" | "bus_voltage";
+const CFG: Record<Key, { label: string; unit: string; digits: number; domain: [number, number]; ticks: number[] }> = {
+  grid_import_kw: { label: "Utility import", unit: "kW", digits: 0, domain: [-200, 700], ticks: [-200, 0, 300, 700] },
+  frequency: { label: "Frequency", unit: "Hz", digits: 2, domain: [49, 51], ticks: [49, 49.5, 50, 50.5, 51] },
+  bus_voltage: { label: "Voltage", unit: "pu", digits: 3, domain: [0.9, 1.1], ticks: [0.9, 0.95, 1, 1.05, 1.1] },
 };
 const W = 620, Ht = 190, PL = 34, PR = 8, PT = 10, PB = 20;
 
 export default function TwinChart({ history, twinHistory }: { history: Telemetry[]; twinHistory: TwinState[] }) {
-  const [key, setKey] = useState<Key>("pressure");
+  const [key, setKey] = useState<Key>("grid_import_kw");
   const c = CFG[key];
   const n = history.length;
   const off = HISTORY - 1 - (n - 1); // right-align: newest sample at the right edge
@@ -38,8 +39,8 @@ export default function TwinChart({ history, twinHistory }: { history: Telemetry
       </header>
       <div className="chart-readout">
         <div>
-          <span className="numeral sm">{last ? last[key].toFixed(key === "flow" ? 0 : 2) : "–"}<small>{c.unit}</small></span>
-          <span className="sub">{lastExp ? `Twin expects ${lastExp.expected[key].toFixed(key === "flow" ? 0 : 2)} ${c.unit}` : ""}</span>
+          <span className="numeral sm">{last ? last[key].toFixed(c.digits) : "–"}<small>{c.unit}</small></span>
+          <span className="sub">{lastExp ? `Twin expects ${lastExp.expected[key].toFixed(c.digits)} ${c.unit}` : ""}</span>
         </div>
         <Meter label="Within twin tolerance" display={`${Math.round(within * 100)}%`} value={within} tone={within > 0.9 ? "green" : within > 0.6 ? "amber" : "red"} />
       </div>

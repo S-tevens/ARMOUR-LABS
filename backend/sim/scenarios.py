@@ -1,9 +1,9 @@
-"""Attack, fault and benign scenarios (owner: P2). All of this stays inside the simulation.
+"""Attack, fault and benign scenarios for the microgrid substation (owner: P2). Simulation only.
 
 kind:
   attack - malicious activity (ground truth: is_attack)
-  fault  - physical/sensor fault, not malicious (ground truth: anomaly but not attack)
-  benign - legitimate operating change that detectors must NOT flag
+  fault  - physical or sensor fault, not malicious (ground truth: anomaly but not attack)
+  benign - legitimate operating or natural change that detectors must NOT flag
 group: "core" scenarios are the demo set; "extra" ones are for evaluation and subtle cases.
 """
 from __future__ import annotations
@@ -15,120 +15,133 @@ if TYPE_CHECKING:  # avoid a circular import at runtime
 
 ATTACKER_IP = "10.0.0.66"
 FLOOD_PER_TICK = 25
-CLOG_RATE_PER_S = 1.0 / 400.0
-SLOW_RAMP_PER_TICK = 0.03
-SLOW_RAMP_CAP_BAR = 3.0
-SMALL_BIAS_BAR = 0.35
+FREQ_SPOOF_HZ = -0.5  # reported 49.5 Hz while the real frequency is 50 Hz
+VOLT_SMALL_BIAS_PU = 0.02
+VOLT_DRIFT_PER_TICK = 0.0007
+VOLT_RAMP_PER_TICK = 0.0008
+VOLT_RAMP_CAP_PU = 0.06
+CLOUD_FACTOR = 0.3
 
 SCENARIO_INFO: dict[str, dict] = {
-    "unauthorised_valve_close": {
-        "label": "Unauthorised valve close",
+    "unauthorised_breaker_trip": {
+        "label": "Unauthorised breaker trip",
         "kind": "attack",
         "group": "core",
         "mitre": "T0855 Unauthorized Command Message",
-        "description": "A non-SCADA source writes Valve 1 = CLOSE on PLC-02. Pressure rises, flow collapses.",
+        "description": "A non-SCADA source opens CB-CRIT. The hospital feeder loses power.",
     },
     "false_data_injection": {
-        "label": "False data injection",
+        "label": "False frequency report",
         "kind": "attack",
         "group": "core",
         "mitre": "T0856 Spoof Reporting Message",
-        "description": "A spoofed report biases the reported pressure. The real process is unchanged.",
+        "description": "A spoofed frequency of 49.5 Hz makes the controller over-discharge the battery. The grid itself is fine.",
     },
     "sensor_drift": {
-        "label": "Sensor drift (benign fault)",
+        "label": "Voltage sensor drift (fault)",
         "kind": "fault",
         "group": "core",
         "mitre": None,
-        "description": "The pressure sensor slowly drifts. No malicious network activity.",
+        "description": "The bus voltage sensor slowly drifts. No malicious network activity.",
     },
     "replay_attack": {
         "label": "Replay attack",
         "kind": "attack",
         "group": "extra",
         "mitre": "T0856 Spoof Reporting Message",
-        "description": "Old pressure/flow readings and old messages are replayed while Valve 1 is closed by an attacker.",
+        "description": "Recorded normal readings and old messages are replayed while CB-CRIT is opened by an attacker.",
     },
     "dos_flood": {
         "label": "Denial of service",
         "kind": "attack",
         "group": "extra",
         "mitre": "T0814 Denial of Service",
-        "description": "A message flood hits PLC-03. Heartbeats are dropped and sensor updates go stale.",
+        "description": "A message flood hits IED-03. Heartbeats are dropped and measurements go stale.",
     },
-    "operator_setpoint_change": {
-        "label": "Operator speed change (legitimate)",
+    "planned_switching": {
+        "label": "Planned switching (legitimate)",
         "kind": "benign",
         "group": "extra",
         "mitre": None,
-        "description": "SCADA lowers Pump 1 speed to 85%. Authorised, so it must not be flagged as an attack.",
+        "description": "SCADA opens CB-NC for planned work. Same physical effect as a trip, but authorised.",
     },
-    "stuck_valve": {
-        "label": "Stuck valve (fault)",
+    "cloud_cover": {
+        "label": "Passing clouds (natural)",
+        "kind": "benign",
+        "group": "extra",
+        "mitre": None,
+        "description": "Irradiance drops to 30%. PV output falls, which the weather station explains.",
+    },
+    "stuck_breaker": {
+        "label": "Stuck breaker (fault)",
         "kind": "fault",
         "group": "extra",
         "mitre": None,
-        "description": "Valve 1 sticks half open although it is commanded open. No network evidence.",
+        "description": "SCADA commands CB-NC open, but the mechanism is stuck and it stays closed.",
     },
-    "filter_clog": {
-        "label": "Filter clogging (fault)",
+    "pv_inverter_trip": {
+        "label": "PV inverter trip (fault)",
         "kind": "fault",
         "group": "extra",
         "mitre": None,
-        "description": "The filter gradually clogs: flow falls and pressure rises slowly.",
+        "description": "The PV inverter trips offline. No network evidence.",
     },
     "fdi_small": {
         "label": "Small false data (subtle)",
         "kind": "attack",
         "group": "extra",
         "mitre": "T0856 Spoof Reporting Message",
-        "description": "A small constant pressure bias with no network trace, designed to stay below simple thresholds.",
+        "description": "A small voltage bias with no network trace, designed to stay below simple thresholds.",
     },
     "fdi_slow_ramp": {
         "label": "Slow-ramp false data (subtle)",
         "kind": "attack",
         "group": "extra",
         "mitre": "T0856 Spoof Reporting Message",
-        "description": "Reported pressure creeps up slowly like a fault, with no network trace. Hardest to tell from sensor drift.",
+        "description": "Reported voltage creeps up like a failing sensor, with no network trace. Hardest to tell from drift.",
     },
 }
 
 
 def start(name: str, eng: "SimulationEngine") -> None:
     p = eng.plant
-    if name == "unauthorised_valve_close":
-        p.set_actuator("valve1", False)
-        p.plc_status["plc02"] = "compromised"
-        eng.emit(ATTACKER_IP, "PLC-02", "WRITE_COIL", "VALVE1", "CLOSE", False)
+    if name == "unauthorised_breaker_trip":
+        p.set_breaker("cb_crit", False)
+        p.ied_status["ied03"] = "compromised"
+        eng.emit(ATTACKER_IP, "IED-03", "OPERATE", "CB_CRIT", "OPEN", False)
     elif name == "false_data_injection":
-        p.sensor_bias["pressure"] = 2.5
-        p.plc_status["plc03"] = "suspicious"
-        eng.emit(ATTACKER_IP, "SCADA", "REPORT", "PRESSURE", "spoofed", False)
+        p.sensor_bias["frequency"] = FREQ_SPOOF_HZ
+        p.ied_status["ied01"] = "suspicious"
+        eng.emit(ATTACKER_IP, "SCADA", "REPORT", "FREQUENCY", "spoofed", False)
     elif name == "sensor_drift":
-        p.plc_status["plc03"] = "suspicious"
+        p.ied_status["ied01"] = "suspicious"
     elif name == "replay_attack":
-        p.start_replay(30)  # sensors now report recorded normal pressure/flow
-        p.set_actuator("valve1", False)  # the real manipulation hidden behind the replay
-        p.plc_status["plc02"] = "compromised"
-        p.plc_status["plc03"] = "suspicious"
-        eng.emit(ATTACKER_IP, "PLC-02", "WRITE_COIL", "VALVE1", "CLOSE", False)
+        p.start_replay(30)  # meters now report recorded normal readings
+        p.set_breaker("cb_crit", False)  # the real manipulation hidden behind the replay
+        p.ied_status["ied03"] = "compromised"
+        p.ied_status["ied01"] = "suspicious"
+        eng.emit(ATTACKER_IP, "IED-03", "OPERATE", "CB_CRIT", "OPEN", False)
         _replay_old_messages(eng)
     elif name == "dos_flood":
         p.stale_prob = 0.5
-        p.plc_status["plc03"] = "suspicious"
-        eng.suppress_heartbeat.add("PLC-03")
-    elif name == "operator_setpoint_change":
-        eng.command("PLC-01", "PUMP1_SPEED", 0.85)
-    elif name == "stuck_valve":
-        p.valve_stuck = 0.5
-        p.plc_status["plc02"] = "suspicious"
-    elif name == "filter_clog":
-        p.clog_rate = CLOG_RATE_PER_S
+        p.ied_status["ied03"] = "suspicious"
+        eng.suppress_heartbeat.add("IED-03")
+    elif name == "planned_switching":
+        eng.command("CB_NC", "OPEN")
+    elif name == "cloud_cover":
+        p.cloud_target = CLOUD_FACTOR
+    elif name == "stuck_breaker":
+        p.stuck.add("cb_nc")  # mechanism fails first, then the authorised command is sent
+        p.ied_status["ied03"] = "suspicious"
+        eng.command("CB_NC", "OPEN")
+    elif name == "pv_inverter_trip":
+        p.pv_inverter_ok = False
+        p.ied_status["ied02"] = "suspicious"
     elif name == "fdi_small":
-        p.sensor_bias["pressure"] = SMALL_BIAS_BAR  # stealthy: no unauthorised network event
-        p.plc_status["plc03"] = "suspicious"
+        p.sensor_bias["bus_voltage"] = VOLT_SMALL_BIAS_PU  # stealthy: no unauthorised network event
+        p.ied_status["ied01"] = "suspicious"
     elif name == "fdi_slow_ramp":
-        p.plc_status["plc03"] = "suspicious"  # stealthy: no unauthorised network event
+        p.ied_status["ied01"] = "suspicious"  # stealthy: no unauthorised network event
     else:
         raise KeyError(name)
 
@@ -137,12 +150,12 @@ def on_tick(name: str, eng: "SimulationEngine", n: int) -> None:
     """Called every tick while the scenario is active. n = ticks since it started."""
     p = eng.plant
     if name == "sensor_drift":
-        p.sensor_bias["pressure"] = 0.04 * n
+        p.sensor_bias["bus_voltage"] = VOLT_DRIFT_PER_TICK * n
     elif name == "fdi_slow_ramp":
-        p.sensor_bias["pressure"] = min(SLOW_RAMP_CAP_BAR, SLOW_RAMP_PER_TICK * n)
+        p.sensor_bias["bus_voltage"] = min(VOLT_RAMP_CAP_PU, VOLT_RAMP_PER_TICK * n)
     elif name == "dos_flood":
         for _ in range(FLOOD_PER_TICK):
-            eng.emit(ATTACKER_IP, "PLC-03", "READ", "STATUS", "flood", False)
+            eng.emit(ATTACKER_IP, "IED-03", "READ", "STATUS", "flood", False)
     elif name == "replay_attack" and n % 5 == 0 and n > 0:
         _replay_old_messages(eng)
 

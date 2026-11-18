@@ -9,13 +9,13 @@ from db.store import EventStore
 from detect.threshold import ThresholdDetector
 from incident.manager import IncidentManager
 from sim.engine import SimulationEngine
-from twin.twin import NominalTwin
+from twin.twin import GridTwin
 
 
 class Runtime:
     def __init__(self, seed: int = 42, db_path: str = ":memory:", tick_seconds: float = 1.0) -> None:
         self.engine = SimulationEngine(seed)
-        self.twin = NominalTwin()
+        self.twin = GridTwin()
         self.detector = ThresholdDetector()
         self.incidents = IncidentManager()
         self.store = EventStore(db_path)
@@ -26,6 +26,7 @@ class Runtime:
     # --- one simulation tick ---------------------------------------------------------
     def step(self) -> list[dict]:
         r = self.engine.step()
+        self.twin.sync(self.engine.command_log)  # the twin's only command input
         twin = self.twin.compute(r.telemetry)
         scores = self.detector.score(r.telemetry, twin, r.events)
         alert = self.detector.is_alert(scores)
@@ -43,7 +44,7 @@ class Runtime:
         return messages
 
     def approve_response(self, incident_id: str) -> Incident:
-        """Simulated containment: restore the safe actuator lineup, then verify recovery."""
+        """Simulated containment: staged response, then recovery verification."""
         inc = self.incidents.begin_recovery(incident_id, self.engine.plant.t)  # raises KeyError if unknown
         self.engine.begin_containment()
         m = {"type": "incident", "data": inc.model_dump()}

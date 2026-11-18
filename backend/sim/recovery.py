@@ -1,8 +1,8 @@
 """Recovery verification (owner: P2).
 
-"Recovered" is only reported when every monitored variable has stayed inside its tolerance, with
-Valve 1 open and both pumps running, for `dwell` consecutive seconds. Otherwise the state is
-"recovering", or "unresolved" once `timeout` seconds pass without recovery.
+"Recovered" is only reported when every monitored variable has stayed inside its tolerance, with all
+breakers closed, for `dwell` consecutive seconds. Otherwise the state is "recovering", or "unresolved"
+once `timeout` seconds pass without recovery.
 """
 from __future__ import annotations
 
@@ -11,11 +11,13 @@ from dataclasses import asdict, dataclass, field
 from core.contracts import Telemetry
 
 TOLERANCE: dict[str, tuple[float, float]] = {
-    "pressure": (1.8, 2.5),
-    "flow": (95.0, 125.0),
-    "tank1_level": (52.0, 72.0),
-    "tank2_level": (38.0, 58.0),
+    "frequency": (49.85, 50.15),
+    "bus_voltage": (0.97, 1.03),
+    "grid_import_kw": (150.0, 480.0),
+    "bess_soc": (35.0, 90.0),
+    "load_critical_kw": (340.0, 460.0),
 }
+BREAKER_FIELDS = ("cb_main", "cb_pv", "cb_bess", "cb_crit", "cb_nc")
 DWELL_S = 10.0
 TIMEOUT_S = 90.0
 
@@ -36,8 +38,7 @@ class RecoveryReport:
     elapsed: float = 0.0
     seconds_in_range: float = 0.0
     dwell: float = DWELL_S
-    valve_open: bool = True
-    pumps_on: bool = True
+    breakers_closed: bool = True
     variables: list[VarCheck] = field(default_factory=list)
 
     def to_dict(self) -> dict:
@@ -74,7 +75,7 @@ class RecoveryVerifier:
             prev = self._prev.get(name)
             checks.append(VarCheck(name, v, lo, hi, d == 0.0, prev is None or d < prev or d == 0.0))
             self._prev[name] = d
-        lineup_ok = obs.valve1 and obs.pump1 and obs.pump2
+        lineup_ok = all(getattr(obs, b) for b in BREAKER_FIELDS)
         all_ok = lineup_ok and all(c.in_range for c in checks)
 
         if self.state == "recovering":
@@ -93,7 +94,6 @@ class RecoveryVerifier:
             elapsed=obs.t - self._t0,
             seconds_in_range=held,
             dwell=self.dwell,
-            valve_open=obs.valve1,
-            pumps_on=obs.pump1 and obs.pump2,
+            breakers_closed=lineup_ok,
             variables=checks,
         )

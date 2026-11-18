@@ -1,13 +1,13 @@
 import type { LinkStat } from "../useStream";
-import type { PlcState, Telemetry } from "../types";
+import type { IedState, Telemetry } from "../types";
 
 const W = 940, Ht = 430;
-const stroke: Record<PlcState, string> = { normal: "#2F6BFF", suspicious: "#F0A030", compromised: "#E5484D" };
+const stroke: Record<IedState, string> = { normal: "#2F6BFF", suspicious: "#F0A030", compromised: "#E5484D" };
 
-const PLCS = [
-  { id: "PLC-01", key: "plc01" as const, y: 40, kids: ["Pump 1", "Pump 2"] },
-  { id: "PLC-02", key: "plc02" as const, y: 165, kids: ["Valve 1"] },
-  { id: "PLC-03", key: "plc03" as const, y: 290, kids: ["Sensors"] },
+const IEDS = [
+  { id: "IED-01", key: "ied01" as const, y: 40, role: "Utility interface", kids: ["Main breaker, grid meter"] },
+  { id: "IED-02", key: "ied02" as const, y: 165, role: "Solar and battery", kids: ["PV inverter, battery"] },
+  { id: "IED-03", key: "ied03" as const, y: 290, role: "Load feeders", kids: ["Hospital, campus breakers"] },
 ];
 const PX = 640, PW = 270, PH = 100;
 const SCADA = { x: 360, y: 190, w: 130, h: 60 };
@@ -35,7 +35,7 @@ function Link({ d, bad, active }: { d: string; bad?: boolean; active?: boolean }
 export default function NetworkGraph({ t, links }: { t: Telemetry | null; links: Record<string, LinkStat> }) {
   const stat = (k: string): LinkStat => links[k] ?? { total: 0, bad: 0 };
   const attackToScada = stat("10.0.0.66>SCADA").bad > 0;
-  const status = (key: "plc01" | "plc02" | "plc03"): PlcState => t?.plc_status[key] ?? "normal";
+  const status = (key: "ied01" | "ied02" | "ied03"): IedState => t?.ied_status[key] ?? "normal";
   const sx = SCADA.x + SCADA.w, sy = SCADA.y + SCADA.h / 2;
 
   return (
@@ -44,10 +44,10 @@ export default function NetworkGraph({ t, links }: { t: Telemetry | null; links:
         <h2>Network</h2>
         <span className="muted small">Message counts since you opened this page</span>
       </header>
-      <svg viewBox={`0 0 ${W} ${Ht}`} className="graph-svg" role="img" aria-label="Network topology">
+      <svg viewBox={`0 0 ${W} ${Ht}`} className="graph-svg" role="img" aria-label="Substation network topology">
         {/* external -> firewall -> SCADA */}
         <Link d={`M ${EXT.x + EXT.w} ${EXT.y + EXT.h / 2} C 220 ${EXT.y + 25}, 240 ${sy}, ${SCADA.x} ${sy}`} bad={attackToScada} active={attackToScada} />
-        {PLCS.map((p) => {
+        {IEDS.map((p) => {
           const s = stat(`SCADA>${p.id}`);
           const atk = stat(`10.0.0.66>${p.id}`);
           const cy = p.y + PH / 2;
@@ -69,16 +69,16 @@ export default function NetworkGraph({ t, links }: { t: Telemetry | null; links:
         })}
         {attackToScada && <text x={190} y={sy - 40} className="glabel red">Spoofed report from 10.0.0.66</text>}
 
-        <Node x={EXT.x} y={EXT.y} w={EXT.w} h={EXT.h} title="External" sub="Outside the plant" tone="#98A5C3" />
-        <Node x={SCADA.x} y={SCADA.y} w={SCADA.w} h={SCADA.h} title="SCADA" sub="Operator station" />
-        {PLCS.map((p) => {
+        <Node x={EXT.x} y={EXT.y} w={EXT.w} h={EXT.h} title="External" sub="Outside the substation" tone="#98A5C3" />
+        <Node x={SCADA.x} y={SCADA.y} w={SCADA.w} h={SCADA.h} title="SCADA" sub="Microgrid controller" />
+        {IEDS.map((p) => {
           const st = status(p.key);
           return (
             <g key={p.id}>
               <rect x={PX} y={p.y} width={PW} height={PH} rx={20} className={`gnode big ${st === "compromised" ? "alarm" : ""}`} />
               <path d={`M ${PX} ${p.y + 20} a 20 20 0 0 1 20 -20 h 30 v ${PH} h -30 a 20 20 0 0 1 -20 -20 z`} fill={stroke[st]} opacity={0.95} />
               <text x={PX + 66} y={p.y + 30} className="gtitle">{p.id}</text>
-              <text x={PX + 66} y={p.y + 49} className="gsub">{st === "normal" ? "Normal" : st === "suspicious" ? "Suspicious" : "Compromised"}</text>
+              <text x={PX + 66} y={p.y + 49} className="gsub">{p.role}, {st}</text>
               {p.kids.map((k, i) => (
                 <g key={k}>
                   <text x={PX + 66} y={p.y + 72 + i * 16} className="gkid">{k}</text>
