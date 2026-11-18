@@ -52,8 +52,14 @@ export function useCityStream(): CityStream {
       ws.onmessage = (ev) => {
         const m = JSON.parse(ev.data) as CityMessage;
         setS((p) => {
-          if (m.type === "city")
-            return { ...p, state: m.data, unserved: tail(p.unserved, m.data.impact.people_unserved), energy: tail(p.energy, m.data.impact.energy_not_served_mwh) };
+          if (m.type === "city") {
+            // the state says which incident is live: drop open ones the backend no longer has (after "Stop and reset")
+            const live = m.data.incident_id;
+            const incidents = Object.fromEntries(
+              Object.entries(p.incidents).filter(([id, i]) => !(i.status === "open" || i.status === "recovering") || id === live),
+            );
+            return { ...p, incidents, state: m.data, unserved: tail(p.unserved, m.data.impact.people_unserved), energy: tail(p.energy, m.data.impact.energy_not_served_mwh) };
+          }
           if (m.type === "city_incident") return { ...p, incidents: { ...p.incidents, [m.data.id]: m.data } };
           return p;
         });

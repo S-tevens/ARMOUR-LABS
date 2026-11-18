@@ -6,7 +6,7 @@ const K = S * 0.866;
 const H = S * 0.5;
 const OX = 0;
 const OY = 0;
-const SP = 1.45; // spacing between districts, in grid units (leaves room for the power lines)
+const DEFAULT_SPACING = 1.45; // spacing between districts, in grid units (leaves room for the power lines)
 const TILE = 0.45; // half-size of a district tile, in grid units
 
 type Pt = [number, number];
@@ -82,9 +82,9 @@ function StatusIcon({ d, x, y }: { d: DistrictState; x: number; y: number }) {
   );
 }
 
-function Tile({ d, selected, onSelect }: { d: DistrictState; selected: boolean; onSelect: (id: string) => void }) {
+function Tile({ d, selected, onSelect, sp }: { d: DistrictState; selected: boolean; onSelect: (id: string) => void; sp: number }) {
   const dark = d.status === "dark";
-  const u = d.x * SP, v = d.y * SP;
+  const u = d.x * sp, v = d.y * sp;
   const corners: Pt[] = [P(u - TILE, v - TILE), P(u + TILE, v - TILE), P(u + TILE, v + TILE), P(u - TILE, v + TILE)];
   const stroke = selected ? "var(--blue)" : dark ? "var(--red)" : d.status === "attention" ? "var(--amber)" : "rgba(255,255,255,0.95)";
   const fill = dark ? "#E4E7EF" : "rgba(255,255,255,0.9)";
@@ -149,11 +149,11 @@ function Pylon({ at }: { at: Pt }) {
 }
 
 /** Bounding box of everything drawn, so the map always fills its frame. */
-function bounds(layout: CityLayout, state: CityState) {
+function bounds(layout: CityLayout, state: CityState, sp: number) {
   const xs: number[] = [], ys: number[] = [];
   const add = (x: number, y: number) => { xs.push(x); ys.push(y); };
   for (const d of state.districts) {
-    const u = d.x * SP, v = d.y * SP;
+    const u = d.x * sp, v = d.y * sp;
     for (const [du, dv] of [[-TILE, -TILE], [TILE, -TILE], [TILE, TILE], [-TILE, TILE]]) add(...P(u + du, v + dv));
     add(...P(u, v, 70));
     const [bx, by] = P(u + TILE, v + TILE);
@@ -162,7 +162,7 @@ function bounds(layout: CityLayout, state: CityState) {
   }
   for (const l of layout.lines) {
     if (l.from === "GRID" && l.terminal) {
-      const [x, y] = P(l.terminal[0] * SP, l.terminal[1] * SP, 6);
+      const [x, y] = P(l.terminal[0] * sp, l.terminal[1] * sp, 6);
       add(x - 22, y - 60);
       add(x + 22, y + 30);
     }
@@ -173,23 +173,24 @@ function bounds(layout: CityLayout, state: CityState) {
 }
 
 export default function CityMap({
-  layout, state, selected, onSelect,
-}: { layout: CityLayout; state: CityState; selected: string | null; onSelect: (id: string) => void }) {
-  const pos = new Map<string, Pt>(state.districts.map((d) => [d.id, P(d.x * SP, d.y * SP, 6)]));
+  layout, state, selected, onSelect, spacing = DEFAULT_SPACING,
+}: { layout: CityLayout; state: CityState; selected: string | null; onSelect: (id: string) => void; spacing?: number }) {
+  const sp = spacing;
+  const pos = new Map<string, Pt>(state.districts.map((d) => [d.id, P(d.x * sp, d.y * sp, 6)]));
   const lineLayout = new Map(layout.lines.map((l) => [l.id, l]));
   const order = [...state.districts].sort((a, b) => a.x + a.y - (b.x + b.y));
   const grid = layout.lines.filter((l) => l.from === "GRID" && l.terminal);
-  const box = bounds(layout, state);
+  const box = bounds(layout, state, sp);
   return (
     <svg viewBox={`${box.x0.toFixed(0)} ${box.y0.toFixed(0)} ${box.w.toFixed(0)} ${box.h.toFixed(0)}`} className="citymap" role="group" aria-label={`Map of ${layout.name}`}>
       {state.lines.map((ln) => {
         const meta = lineLayout.get(ln.id);
-        const a = ln.from === "GRID" && meta?.terminal ? P(meta.terminal[0] * SP, meta.terminal[1] * SP, 6) : pos.get(ln.from);
+        const a = ln.from === "GRID" && meta?.terminal ? P(meta.terminal[0] * sp, meta.terminal[1] * sp, 6) : pos.get(ln.from);
         const b = pos.get(ln.to);
         return a && b ? <Wire key={ln.id} ln={ln} a={a} b={b} /> : null;
       })}
       {grid.map((l, i) => {
-        const at = P(l.terminal![0] * SP, l.terminal![1] * SP, 6);
+        const at = P(l.terminal![0] * sp, l.terminal![1] * sp, 6);
         return (
           <g key={l.id}>
             <Pylon at={at} />
@@ -197,11 +198,11 @@ export default function CityMap({
           </g>
         );
       })}
-      {order.map((d) => <Tile key={d.id} d={d} selected={selected === d.id} onSelect={onSelect} />)}
+      {order.map((d) => <Tile key={d.id} d={d} selected={selected === d.id} onSelect={onSelect} sp={sp} />)}
       {/* labels last, so neighbouring tiles never cover a name */}
       {order.map((d) => {
-        const [, by] = P(d.x * SP + TILE, d.y * SP + TILE);
-        const [cx] = P(d.x * SP, d.y * SP);
+        const [, by] = P(d.x * sp + TILE, d.y * sp + TILE);
+        const [cx] = P(d.x * sp, d.y * sp);
         return (
           <text key={`l-${d.id}`} x={cx} y={by + 20} textAnchor="middle" pointerEvents="none"
             className={`tile-label ${d.status === "dark" ? "bad" : ""} ${selected === d.id ? "sel" : ""}`}>{d.name}</text>

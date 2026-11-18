@@ -5,6 +5,7 @@ import type { Incident } from "../types";
 interface Item { key: string; level: "critical" | "warn" | "info"; text: string; weight: number; district?: string }
 
 const TYPE: Record<string, string> = { hospital: "Hospital", water: "Water pumping", metro: "Metro", airport: "Airport feed", tech: "Tech park" };
+const PLURAL: Record<string, string> = { hospital: "hospitals", water: "water stations", metro: "metro facilities", airport: "airport feeds", tech: "tech parks" };
 const CAUSE: Record<string, string> = { attack: "Likely attack", fault: "Likely equipment fault", unknown: "Cause not yet known" };
 
 /** Plain sentences, ranked by impact. Every number and name comes from the live city state and the incident. */
@@ -15,14 +16,25 @@ export function buildItems(s: CityState, incident: Incident | undefined): Item[]
     items.push({ key: "inc", level: "critical", weight: 1e12, text: `${CAUSE[incident.classification]}: ${incident.evidence[0].text}` });
   }
   for (const d of s.districts) {
+    // group identical facilities (two hospitals on backup near one substation read as one line)
+    const groups = new Map<string, { type: string; status: string; priority: number; n: number; minutes: number }>();
     for (const f of d.facilities) {
-      // Hospitals first: a hospital on backup with minutes running out outranks any other facility.
-      const hospital = f.type === "hospital";
-      if (f.status === "down") items.push({ key: f.id, level: "critical", weight: hospital ? 2e9 : f.priority <= 2 ? 9e8 : 4e8, district: d.id, text: `${TYPE[f.type]} in ${d.name} has no power` });
-      else if (f.status === "backup") items.push({ key: f.id, level: "critical", weight: 1e9 - f.backup_minutes_left, district: d.id, text: `${TYPE[f.type]} in ${d.name} is on backup power, about ${f.backup_minutes_left} min left` });
+      if (f.status === "ok") continue;
+      const key = `${f.type}:${f.status}`;
+      const g = groups.get(key) ?? { type: f.type, status: f.status, priority: f.priority, n: 0, minutes: 1e9 };
+      g.n += 1;
+      g.minutes = Math.min(g.minutes, f.backup_minutes_left);
+      groups.set(key, g);
     }
-    if (d.status === "dark") items.push({ key: `d-${d.id}`, level: "critical", weight: d.people_unserved, district: d.id, text: `${d.name} is without power (${people(d.people_unserved)} people)` });
-    if (d.status === "stale") items.push({ key: `s-${d.id}`, level: "warn", weight: 3e8, district: d.id, text: `The control centre has lost sight of ${d.name}` });
+    for (const [key, g] of groups) {
+      // Hospitals first: a hospital on backup with minutes running out outranks any other facility.
+      const hospital = g.type === "hospital";
+      const what = g.n > 1 ? `${g.n} ${PLURAL[g.type]} near ${d.name} substation are` : `${TYPE[g.type]} near ${d.name} substation is`;
+      if (g.status === "down") items.push({ key: `${d.id}:${key}`, level: "critical", weight: hospital ? 2e9 : g.priority <= 2 ? 9e8 : 4e8, district: d.id, text: `${what} without power` });
+      else items.push({ key: `${d.id}:${key}`, level: "critical", weight: 1e9 - g.minutes, district: d.id, text: `${what} on backup power, about ${g.minutes} min left` });
+    }
+    if (d.status === "dark") items.push({ key: `d-${d.id}`, level: "critical", weight: d.people_unserved, district: d.id, text: `${d.name} substation is without power (${people(d.people_unserved)} people)` });
+    if (d.status === "stale") items.push({ key: `s-${d.id}`, level: "warn", weight: 3e8, district: d.id, text: `The control centre has lost sight of ${d.name} substation` });
   }
   for (const l of s.lines) {
     const route = `${name(l.from)} to ${name(l.to)}`;

@@ -34,8 +34,9 @@ def params_for(d: config.District, index: int, featured: str) -> PlantParams:
 
 
 class CityRuntime:
-    def __init__(self, seed: int = 42, tick_seconds: float = 1.0, featured_db: str = ":memory:") -> None:
-        self.cfg = config.load()
+    def __init__(self, seed: int = 42, tick_seconds: float = 1.0, featured_db: str = ":memory:",
+                 city: str | None = None) -> None:
+        self.cfg = config.load(config.LAYOUTS[city] if city else None)
         self.featured = self.cfg.featured
         self.tick_seconds = tick_seconds
         self.engine = CityEngine(self.cfg, seed)
@@ -70,11 +71,20 @@ class CityRuntime:
             "name": self.cfg.name,
             "note": self.cfg.note,
             "featured": self.featured,
-            "districts": [{"id": d.id, "name": d.name, "x": d.x, "y": d.y, "population": d.population,
-                           "facilities": [{"id": f.id, "type": f.type, "priority": f.priority} for f in d.facilities]}
+            "attribution": self.cfg.meta.get("attribution"),
+            "data_note": self.cfg.meta.get("data_note"),
+            "center": self.cfg.meta.get("center"),
+            "zoom": self.cfg.meta.get("zoom"),
+            "feeders": self.cfg.meta.get("feeders", []),
+            "districts": [{"id": d.id, "name": d.name, "x": d.x, "y": d.y, "lat": d.lat, "lon": d.lon,
+                           "voltage_kv": d.voltage_kv, "entry": d.entry, "population": d.population,
+                           "base_load_mw": d.base_load_mw,
+                           "facilities": [{"id": f.id, "type": f.type, "priority": f.priority, "name": f.name, "lat": f.lat, "lon": f.lon}
+                                          for f in d.facilities]}
                           for d in self.cfg.districts],
             "lines": [{"id": l.id, "from": l.a, "to": l.b, "capacity_mw": l.capacity_mw,
-                       "terminal": self.cfg.terminals.get(l.id)} for l in self.cfg.lines],
+                       "terminal": self.cfg.terminals.get(l.id), **self.cfg.line_meta.get(l.id, {})}
+                      for l in self.cfg.lines],
         }
 
     def scenarios(self) -> list[dict]:
@@ -162,6 +172,14 @@ class CityRuntime:
         self.store.append("city_incident", self.engine.t, m["data"])
         self._broadcast(m)
         return inc
+
+    def reset(self) -> None:
+        """Hard reset to a healthy city, with no incidents or remembered evidence."""
+        self.engine.stop_scenario()
+        self.incidents.reset()
+        self.detector.reset()
+        self.last_report = CityRecoveryReport("idle")
+        self.engine.containment_log = []
 
     def recovery(self) -> dict:
         return {"report": self.last_report.to_dict(), "actions": self.engine.containment_log}

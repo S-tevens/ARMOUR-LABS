@@ -1,0 +1,285 @@
+{
+  "name": "Synthetic test city (fictional network)",
+  "note": "Fictional network used by the automated tests. District names are real-sounding, but the network, loads, populations and facilities are invented. Not real data.",
+  "featured_district": "kr",
+  "demand_per_district_scale": 1.0,
+  "districts": [
+    {
+      "id": "yl",
+      "name": "Yelahanka",
+      "x": 2.0,
+      "y": 0.0,
+      "population": 450000,
+      "base_load_mw": 16,
+      "plant_scale": 0.7,
+      "facilities": [
+        {
+          "id": "yl-water",
+          "type": "water",
+          "priority": 2
+        },
+        {
+          "id": "yl-airport",
+          "type": "airport",
+          "priority": 2
+        }
+      ]
+    },
+    {
+      "id": "hb",
+      "name": "Hebbal",
+      "x": 2.0,
+      "y": 1.0,
+      "population": 700000,
+      "base_load_mw": 24,
+      "plant_scale": 0.9,
+      "facilities": [
+        {
+          "id": "hb-hosp",
+          "type": "hospital",
+          "priority": 1
+        },
+        {
+          "id": "hb-tech",
+          "type": "tech",
+          "priority": 3
+        }
+      ]
+    },
+    {
+      "id": "wf",
+      "name": "Whitefield",
+      "x": 4.0,
+      "y": 1.0,
+      "population": 900000,
+      "base_load_mw": 34,
+      "plant_scale": 1.2,
+      "facilities": [
+        {
+          "id": "wf-hosp",
+          "type": "hospital",
+          "priority": 1
+        },
+        {
+          "id": "wf-tech",
+          "type": "tech",
+          "priority": 3
+        }
+      ]
+    },
+    {
+      "id": "cc",
+      "name": "City Centre",
+      "x": 2.0,
+      "y": 2.0,
+      "population": 1000000,
+      "base_load_mw": 36,
+      "plant_scale": 1.3,
+      "facilities": [
+        {
+          "id": "cc-hosp",
+          "type": "hospital",
+          "priority": 1
+        },
+        {
+          "id": "cc-metro",
+          "type": "metro",
+          "priority": 2
+        },
+        {
+          "id": "cc-water",
+          "type": "water",
+          "priority": 2
+        }
+      ]
+    },
+    {
+      "id": "in",
+      "name": "Indiranagar",
+      "x": 3.0,
+      "y": 2.0,
+      "population": 800000,
+      "base_load_mw": 26,
+      "plant_scale": 0.95,
+      "facilities": [
+        {
+          "id": "in-hosp",
+          "type": "hospital",
+          "priority": 1
+        },
+        {
+          "id": "in-metro",
+          "type": "metro",
+          "priority": 2
+        }
+      ]
+    },
+    {
+      "id": "jy",
+      "name": "Jayanagar",
+      "x": 2.0,
+      "y": 3.0,
+      "population": 750000,
+      "base_load_mw": 24,
+      "plant_scale": 0.9,
+      "facilities": [
+        {
+          "id": "jy-hosp",
+          "type": "hospital",
+          "priority": 1
+        },
+        {
+          "id": "jy-metro",
+          "type": "metro",
+          "priority": 2
+        }
+      ]
+    },
+    {
+      "id": "kr",
+      "name": "Koramangala",
+      "x": 3.0,
+      "y": 3.0,
+      "population": 900000,
+      "base_load_mw": 30,
+      "plant_scale": 1.0,
+      "facilities": [
+        {
+          "id": "kr-hosp",
+          "type": "hospital",
+          "priority": 1
+        },
+        {
+          "id": "kr-tech",
+          "type": "tech",
+          "priority": 3
+        }
+      ]
+    },
+    {
+      "id": "ec",
+      "name": "Electronic City",
+      "x": 3.0,
+      "y": 4.0,
+      "population": 600000,
+      "base_load_mw": 30,
+      "plant_scale": 1.0,
+      "facilities": [
+        {
+          "id": "ec-hosp",
+          "type": "hospital",
+          "priority": 1
+        },
+        {
+          "id": "ec-tech",
+          "type": "tech",
+          "priority": 3
+        }
+      ]
+    }
+  ],
+  "lines": [
+    {
+      "id": "L1",
+      "from": "GRID",
+      "to": "hb",
+      "capacity_mw": 120,
+      "terminal": [
+        2.0,
+        -0.9
+      ]
+    },
+    {
+      "id": "L2",
+      "from": "GRID",
+      "to": "wf",
+      "capacity_mw": 105,
+      "terminal": [
+        5.0,
+        0.4
+      ]
+    },
+    {
+      "id": "L3",
+      "from": "GRID",
+      "to": "ec",
+      "capacity_mw": 115,
+      "terminal": [
+        3.0,
+        5.0
+      ]
+    },
+    {
+      "id": "L4",
+      "from": "hb",
+      "to": "yl",
+      "capacity_mw": 40
+    },
+    {
+      "id": "L5",
+      "from": "hb",
+      "to": "cc",
+      "capacity_mw": 70
+    },
+    {
+      "id": "L6",
+      "from": "wf",
+      "to": "in",
+      "capacity_mw": 60
+    },
+    {
+      "id": "L7",
+      "from": "in",
+      "to": "cc",
+      "capacity_mw": 55
+    },
+    {
+      "id": "L8",
+      "from": "cc",
+      "to": "jy",
+      "capacity_mw": 55
+    },
+    {
+      "id": "L9",
+      "from": "in",
+      "to": "kr",
+      "capacity_mw": 45
+    },
+    {
+      "id": "L10",
+      "from": "kr",
+      "to": "ec",
+      "capacity_mw": 55
+    },
+    {
+      "id": "L11",
+      "from": "jy",
+      "to": "ec",
+      "capacity_mw": 45
+    },
+    {
+      "id": "L12",
+      "from": "kr",
+      "to": "jy",
+      "capacity_mw": 30
+    },
+    {
+      "id": "L13",
+      "from": "hb",
+      "to": "in",
+      "capacity_mw": 40
+    }
+  ],
+  "scenario_defaults": {
+    "trip_districts": [
+      "in",
+      "kr",
+      "jy"
+    ],
+    "stale_districts": [
+      "hb"
+    ],
+    "fault_line": "L6",
+    "maintenance_line": "L5"
+  }
+}

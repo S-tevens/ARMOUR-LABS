@@ -1,0 +1,2358 @@
+{
+ "name": "Bengaluru power grid",
+ "note": "Substations, mapped line routes, hospitals and metro stations are from OpenStreetMap. Ties that OpenStreetMap does not map are inferred (dashed). Loads, line ratings, populations and every attack are simulated; this is not utility data.",
+ "attribution": "Map data \u00a9 OpenStreetMap contributors (ODbL).",
+ "data_note": "Real: substation locations, names and voltages; mapped line routes; hospitals; metro stations. Inferred: ties missing from OpenStreetMap. Simulated: loads, ratings, populations, attacks.",
+ "source": {
+  "fetched": "2026-11-18",
+  "bbox": "12.80,77.42,13.17,77.82",
+  "calibration_seed": 1
+ },
+ "center": [
+  12.9716,
+  77.5946
+ ],
+ "zoom": 11,
+ "featured": "nimhans",
+ "scenario_defaults": {
+  "trip_districts": [
+   "east-division-compound",
+   "a-station",
+   "nimhans"
+  ],
+  "stale_districts": [
+   "puttenahalli"
+  ],
+  "fault_line": "L6",
+  "maintenance_line": "L35"
+ },
+ "districts": [
+  {
+   "id": "hoodi",
+   "name": "Hoodi",
+   "lat": 12.9952,
+   "lon": 77.71204,
+   "voltage_kv": 400,
+   "entry": true,
+   "osm_id": "w126705930",
+   "population": 32000,
+   "base_load_mw": 9.1,
+   "plant_scale": 0.6,
+   "facilities": [
+    {
+     "id": "hoodi-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Kinder Women's Hospital & Fertility Center",
+     "lat": 12.99205,
+     "lon": 77.70647
+    },
+    {
+     "id": "hoodi-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (2 stations)",
+     "lat": 12.99113,
+     "lon": 77.7075
+    }
+   ]
+  },
+  {
+   "id": "yelahanka-powergrid",
+   "name": "Yelahanka Powergrid",
+   "lat": 13.1526,
+   "lon": 77.55696,
+   "voltage_kv": 400,
+   "entry": true,
+   "osm_id": "w279368506",
+   "population": 89000,
+   "base_load_mw": 25.3,
+   "plant_scale": 0.84,
+   "facilities": []
+  },
+  {
+   "id": "bagalur",
+   "name": "Bagalur",
+   "lat": 13.14499,
+   "lon": 77.675,
+   "voltage_kv": 400,
+   "entry": true,
+   "osm_id": "w844928330",
+   "population": 81000,
+   "base_load_mw": 23.2,
+   "plant_scale": 0.77,
+   "facilities": []
+  },
+  {
+   "id": "mylasandra",
+   "name": "Mylasandra",
+   "lat": 12.84262,
+   "lon": 77.62455,
+   "voltage_kv": 400,
+   "entry": true,
+   "osm_id": "w1117538124",
+   "population": 63000,
+   "base_load_mw": 18.1,
+   "plant_scale": 0.6,
+   "facilities": [
+    {
+     "id": "mylasandra-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Srujana Hospital",
+     "lat": 12.84135,
+     "lon": 77.64755
+    }
+   ]
+  },
+  {
+   "id": "srs-peenya",
+   "name": "SRS Peenya",
+   "lat": 13.02705,
+   "lon": 77.5247,
+   "voltage_kv": 400,
+   "entry": true,
+   "osm_id": "w1280619034",
+   "population": 134000,
+   "base_load_mw": 38.2,
+   "plant_scale": 1.27,
+   "facilities": [
+    {
+     "id": "srs-peenya-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Punya Hospital",
+     "lat": 13.00115,
+     "lon": 77.53598
+    },
+    {
+     "id": "srs-peenya-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Ravi Kirloskar Memorial Hospital",
+     "lat": 13.03847,
+     "lon": 77.5278
+    },
+    {
+     "id": "srs-peenya-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (4 stations)",
+     "lat": 13.038,
+     "lon": 77.52275
+    }
+   ]
+  },
+  {
+   "id": "hsr-layout",
+   "name": "HSR Layout",
+   "lat": 12.90196,
+   "lon": 77.64955,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w24488576",
+   "population": 68000,
+   "base_load_mw": 19.5,
+   "plant_scale": 0.65,
+   "facilities": [
+    {
+     "id": "hsr-layout-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Manipal Hospitals",
+     "lat": 12.91997,
+     "lon": 77.66525
+    },
+    {
+     "id": "hsr-layout-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Phoenix Hospital",
+     "lat": 12.91661,
+     "lon": 77.64505
+    },
+    {
+     "id": "hsr-layout-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (1 stations)",
+     "lat": 12.88993,
+     "lon": 77.63922
+    }
+   ]
+  },
+  {
+   "id": "nimhans",
+   "name": "NIMHANS",
+   "lat": 12.94138,
+   "lon": 77.59152,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w172899342",
+   "population": 270000,
+   "base_load_mw": 77.0,
+   "plant_scale": 1.0,
+   "facilities": [
+    {
+     "id": "nimhans-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Kidwai Memorial Institute of Oncology",
+     "lat": 12.93653,
+     "lon": 77.59814
+    },
+    {
+     "id": "nimhans-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Popular Hospital",
+     "lat": 12.95149,
+     "lon": 77.57036
+    },
+    {
+     "id": "nimhans-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (8 stations)",
+     "lat": 12.93102,
+     "lon": 77.58207
+    }
+   ]
+  },
+  {
+   "id": "epip-whitefield",
+   "name": "EPIP Whitefield",
+   "lat": 12.97671,
+   "lon": 77.71772,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w181466418",
+   "population": 140000,
+   "base_load_mw": 40.1,
+   "plant_scale": 1.34,
+   "facilities": [
+    {
+     "id": "epip-whitefield-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Brookefield Hospital(A Unit Of Sanjeevani Hospital)",
+     "lat": 12.96682,
+     "lon": 77.71689
+    },
+    {
+     "id": "epip-whitefield-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Rainbow Children's Hospital",
+     "lat": 12.97531,
+     "lon": 77.69783
+    },
+    {
+     "id": "epip-whitefield-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (3 stations)",
+     "lat": 12.97836,
+     "lon": 77.71641
+    }
+   ]
+  },
+  {
+   "id": "kumbalagodu",
+   "name": "Kumbalagodu",
+   "lat": 12.87048,
+   "lon": 77.44514,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w279406295",
+   "population": 126000,
+   "base_load_mw": 36.0,
+   "plant_scale": 1.2,
+   "facilities": [
+    {
+     "id": "kumbalagodu-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (2 stations)",
+     "lat": 12.90263,
+     "lon": 77.46893
+    }
+   ]
+  },
+  {
+   "id": "subramanyapura",
+   "name": "Subramanyapura",
+   "lat": 12.89608,
+   "lon": 77.54662,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w279472194",
+   "population": 226000,
+   "base_load_mw": 64.7,
+   "plant_scale": 2.16,
+   "facilities": [
+    {
+     "id": "subramanyapura-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Cloudnine Hospital",
+     "lat": 12.88329,
+     "lon": 77.55009
+    },
+    {
+     "id": "subramanyapura-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (4 stations)",
+     "lat": 12.88524,
+     "lon": 77.55225
+    }
+   ]
+  },
+  {
+   "id": "sarjapur",
+   "name": "Sarjapur",
+   "lat": 12.85867,
+   "lon": 77.79472,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w279472195",
+   "population": 53000,
+   "base_load_mw": 15.2,
+   "plant_scale": 0.6,
+   "facilities": []
+  },
+  {
+   "id": "tataguni",
+   "name": "Tataguni",
+   "lat": 12.84669,
+   "lon": 77.51539,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w279472198",
+   "population": 64000,
+   "base_load_mw": 18.3,
+   "plant_scale": 0.61,
+   "facilities": [
+    {
+     "id": "tataguni-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (1 stations)",
+     "lat": 12.86173,
+     "lon": 77.52995
+    }
+   ]
+  },
+  {
+   "id": "yerandanahalli",
+   "name": "Yerandanahalli",
+   "lat": 12.80845,
+   "lon": 77.68336,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w279472199",
+   "population": 48000,
+   "base_load_mw": 13.7,
+   "plant_scale": 0.6,
+   "facilities": [
+    {
+     "id": "yerandanahalli-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (3 stations)",
+     "lat": 12.82919,
+     "lon": 77.68236
+    }
+   ]
+  },
+  {
+   "id": "puttenahalli",
+   "name": "Puttenahalli",
+   "lat": 13.11433,
+   "lon": 77.58029,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w279472296",
+   "population": 274000,
+   "base_load_mw": 78.4,
+   "plant_scale": 2.61,
+   "facilities": []
+  },
+  {
+   "id": "hebbal",
+   "name": "Hebbal",
+   "lat": 13.0303,
+   "lon": 77.58241,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w280482830",
+   "population": 73000,
+   "base_load_mw": 20.9,
+   "plant_scale": 0.7,
+   "facilities": [
+    {
+     "id": "hebbal-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Baptist Hospital",
+     "lat": 13.03472,
+     "lon": 77.59017
+    },
+    {
+     "id": "hebbal-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "RMV Hospital",
+     "lat": 13.03228,
+     "lon": 77.57688
+    }
+   ]
+  },
+  {
+   "id": "sahakar-nagara",
+   "name": "Sahakar Nagara",
+   "lat": 13.06548,
+   "lon": 77.58231,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w280482858",
+   "population": 40000,
+   "base_load_mw": 11.5,
+   "plant_scale": 0.6,
+   "facilities": [
+    {
+     "id": "sahakar-nagara-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Manipal Hospital",
+     "lat": 13.05095,
+     "lon": 77.59387
+    }
+   ]
+  },
+  {
+   "id": "cpri",
+   "name": "CPRI",
+   "lat": 13.0258,
+   "lon": 77.58119,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w280482861",
+   "population": 82000,
+   "base_load_mw": 23.3,
+   "plant_scale": 0.78,
+   "facilities": [
+    {
+     "id": "cpri-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Ramaiah Memorial Hospital",
+     "lat": 13.02822,
+     "lon": 77.56978
+    }
+   ]
+  },
+  {
+   "id": "a-station",
+   "name": "A Station",
+   "lat": 12.98293,
+   "lon": 77.57555,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w316686955",
+   "population": 160000,
+   "base_load_mw": 45.7,
+   "plant_scale": 1.52,
+   "facilities": [
+    {
+     "id": "a-station-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Victoria Hospital",
+     "lat": 12.9635,
+     "lon": 77.57369
+    },
+    {
+     "id": "a-station-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Bhagwan Mahaveer Jain Hospital",
+     "lat": 12.99149,
+     "lon": 77.5953
+    },
+    {
+     "id": "a-station-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (11 stations)",
+     "lat": 12.9809,
+     "lon": 77.56483
+    }
+   ]
+  },
+  {
+   "id": "hbr-layout",
+   "name": "HBR Layout",
+   "lat": 13.03004,
+   "lon": 77.62773,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w346444901",
+   "population": 211000,
+   "base_load_mw": 60.4,
+   "plant_scale": 2.01,
+   "facilities": []
+  },
+  {
+   "id": "khodays-glass-factory",
+   "name": "Khodays Glass Factory",
+   "lat": 12.87383,
+   "lon": 77.56593,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w781680963",
+   "population": 155000,
+   "base_load_mw": 44.3,
+   "plant_scale": 1.48,
+   "facilities": [
+    {
+     "id": "khodays-glass-factory-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (4 stations)",
+     "lat": 12.88436,
+     "lon": 77.58059
+    }
+   ]
+  },
+  {
+   "id": "kiadb",
+   "name": "KIADB",
+   "lat": 13.15037,
+   "lon": 77.70141,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w801307393",
+   "population": 45000,
+   "base_load_mw": 12.8,
+   "plant_scale": 0.6,
+   "facilities": []
+  },
+  {
+   "id": "kiadb-2",
+   "name": "KIADB",
+   "lat": 13.1705,
+   "lon": 77.73485,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w801307408",
+   "population": 131000,
+   "base_load_mw": 37.5,
+   "plant_scale": 1.25,
+   "facilities": [
+    {
+     "id": "kiadb-2-airport",
+     "type": "airport",
+     "priority": 2,
+     "name": "Kempegowda International Airport",
+     "lat": 13.1986,
+     "lon": 77.7066
+    }
+   ]
+  },
+  {
+   "id": "vikas-tech-park",
+   "name": "Vikas Tech Park",
+   "lat": 12.93067,
+   "lon": 77.69667,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1060953964",
+   "population": 63000,
+   "base_load_mw": 18.1,
+   "plant_scale": 0.6,
+   "facilities": [
+    {
+     "id": "vikas-tech-park-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Sakra World",
+     "lat": 12.93222,
+     "lon": 77.68533
+    },
+    {
+     "id": "vikas-tech-park-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Stanford Speciality Hospital",
+     "lat": 12.91153,
+     "lon": 77.67641
+    }
+   ]
+  },
+  {
+   "id": "exora",
+   "name": "Exora",
+   "lat": 12.93786,
+   "lon": 77.69733,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1064882695",
+   "population": 54000,
+   "base_load_mw": 15.3,
+   "plant_scale": 0.6,
+   "facilities": []
+  },
+  {
+   "id": "east-division-compound",
+   "name": "East Division Compound",
+   "lat": 12.97169,
+   "lon": 77.60476,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1097223364",
+   "population": 345000,
+   "base_load_mw": 98.6,
+   "plant_scale": 3.0,
+   "facilities": [
+    {
+     "id": "east-division-compound-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Hosmat Hospital",
+     "lat": 12.9691,
+     "lon": 77.61332
+    },
+    {
+     "id": "east-division-compound-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (5 stations)",
+     "lat": 12.97695,
+     "lon": 77.60794
+    }
+   ]
+  },
+  {
+   "id": "vrishabavathi-valley",
+   "name": "Vrishabavathi Valley",
+   "lat": 12.93575,
+   "lon": 77.52055,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1097273238",
+   "population": 228000,
+   "base_load_mw": 65.0,
+   "plant_scale": 2.17,
+   "facilities": [
+    {
+     "id": "vrishabavathi-valley-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (7 stations)",
+     "lat": 12.93594,
+     "lon": 77.51574
+    }
+   ]
+  },
+  {
+   "id": "manyata",
+   "name": "Manyata",
+   "lat": 13.05293,
+   "lon": 77.61509,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1097355603",
+   "population": 60000,
+   "base_load_mw": 17.2,
+   "plant_scale": 0.6,
+   "facilities": []
+  },
+  {
+   "id": "hal",
+   "name": "HAL",
+   "lat": 12.96861,
+   "lon": 77.66157,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1097355609",
+   "population": 199000,
+   "base_load_mw": 56.9,
+   "plant_scale": 1.9,
+   "facilities": [
+    {
+     "id": "hal-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Chinmaya Mission Hospital",
+     "lat": 12.97793,
+     "lon": 77.64619
+    },
+    {
+     "id": "hal-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Manipal Hospital, Bengaluru Urban",
+     "lat": 12.95871,
+     "lon": 77.64903
+    },
+    {
+     "id": "hal-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (3 stations)",
+     "lat": 12.98501,
+     "lon": 77.64531
+    }
+   ]
+  },
+  {
+   "id": "naganathapura",
+   "name": "Naganathapura",
+   "lat": 12.87455,
+   "lon": 77.65781,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1097355611",
+   "population": 70000,
+   "base_load_mw": 20.0,
+   "plant_scale": 0.67,
+   "facilities": [
+    {
+     "id": "naganathapura-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "PESU HOSPITAL",
+     "lat": 12.86279,
+     "lon": 77.66629
+    },
+    {
+     "id": "naganathapura-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Ramakrishna Hospital",
+     "lat": 12.85007,
+     "lon": 77.66247
+    },
+    {
+     "id": "naganathapura-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (5 stations)",
+     "lat": 12.86368,
+     "lon": 77.65798
+    }
+   ]
+  },
+  {
+   "id": "sobha-dream-acres",
+   "name": "Sobha Dream Acres",
+   "lat": 12.93099,
+   "lon": 77.72308,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1182510990",
+   "population": 186000,
+   "base_load_mw": 53.1,
+   "plant_scale": 1.77,
+   "facilities": []
+  },
+  {
+   "id": "itpl",
+   "name": "ITPL",
+   "lat": 12.98467,
+   "lon": 77.73641,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1190136202",
+   "population": 206000,
+   "base_load_mw": 58.9,
+   "plant_scale": 1.96,
+   "facilities": [
+    {
+     "id": "itpl-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Manipal Hospitals Whitefield",
+     "lat": 12.98807,
+     "lon": 77.72864
+    },
+    {
+     "id": "itpl-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (4 stations)",
+     "lat": 12.98756,
+     "lon": 77.74257
+    }
+   ]
+  },
+  {
+   "id": "nagarbhavi",
+   "name": "Nagarbhavi",
+   "lat": 12.96744,
+   "lon": 77.5118,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1217243748",
+   "population": 331000,
+   "base_load_mw": 94.6,
+   "plant_scale": 3.0,
+   "facilities": [
+    {
+     "id": "nagarbhavi-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "GM Hospital",
+     "lat": 12.99295,
+     "lon": 77.53869
+    },
+    {
+     "id": "nagarbhavi-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (2 stations)",
+     "lat": 12.96642,
+     "lon": 77.53549
+    }
+   ]
+  },
+  {
+   "id": "220-33kv-gis-central-silk-board",
+   "name": "220/33kV GIS , Central Silk Board",
+   "lat": 12.9156,
+   "lon": 77.62457,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1299917513",
+   "population": 239000,
+   "base_load_mw": 68.2,
+   "plant_scale": 2.27,
+   "facilities": [
+    {
+     "id": "220-33kv-gis-central-silk-board-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Rainbow Children's Hospital",
+     "lat": 12.90338,
+     "lon": 77.60074
+    },
+    {
+     "id": "220-33kv-gis-central-silk-board-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Apollo Hospital",
+     "lat": 12.8963,
+     "lon": 77.59835
+    },
+    {
+     "id": "220-33kv-gis-central-silk-board-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (7 stations)",
+     "lat": 12.90967,
+     "lon": 77.61241
+    }
+   ]
+  },
+  {
+   "id": "iti",
+   "name": "ITI",
+   "lat": 13.005,
+   "lon": 77.68656,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1359786564",
+   "population": 56000,
+   "base_load_mw": 15.9,
+   "plant_scale": 0.6,
+   "facilities": [
+    {
+     "id": "iti-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (3 stations)",
+     "lat": 12.99765,
+     "lon": 77.67962
+    }
+   ]
+  },
+  {
+   "id": "brindavan",
+   "name": "Brindavan",
+   "lat": 13.0174,
+   "lon": 77.50669,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1360490750",
+   "population": 125000,
+   "base_load_mw": 35.6,
+   "plant_scale": 1.19,
+   "facilities": [
+    {
+     "id": "brindavan-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (4 stations)",
+     "lat": 13.05196,
+     "lon": 77.48883
+    }
+   ]
+  },
+  {
+   "id": "mathikere",
+   "name": "Mathikere",
+   "lat": 13.03673,
+   "lon": 77.55815,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1497373620",
+   "population": 154000,
+   "base_load_mw": 43.9,
+   "plant_scale": 1.46,
+   "facilities": [
+    {
+     "id": "mathikere-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (3 stations)",
+     "lat": 13.01532,
+     "lon": 77.55089
+    }
+   ]
+  },
+  {
+   "id": "whitefield",
+   "name": "Whitefield",
+   "lat": 12.97216,
+   "lon": 77.76076,
+   "voltage_kv": 220,
+   "entry": false,
+   "osm_id": "w1499554919",
+   "population": 49000,
+   "base_load_mw": 13.9,
+   "plant_scale": 0.6,
+   "facilities": [
+    {
+     "id": "whitefield-hosp-1",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Manipal Hospitals",
+     "lat": 12.95834,
+     "lon": 77.74545
+    },
+    {
+     "id": "whitefield-hosp-2",
+     "type": "hospital",
+     "priority": 1,
+     "name": "Svastha Hospital",
+     "lat": 12.96592,
+     "lon": 77.74939
+    },
+    {
+     "id": "whitefield-metro",
+     "type": "metro",
+     "priority": 2,
+     "name": "Namma Metro (1 stations)",
+     "lat": 12.9873,
+     "lon": 77.75388
+    }
+   ]
+  }
+ ],
+ "lines": [
+  {
+   "id": "L1",
+   "from": "hoodi",
+   "to": "bagalur",
+   "capacity_mw": 600.0,
+   "voltage_kv": 400,
+   "source": "osm",
+   "path": [
+    [
+     12.9952,
+     77.71204
+    ],
+    [
+     13.00442,
+     77.7133
+    ],
+    [
+     13.01143,
+     77.71322
+    ],
+    [
+     13.01824,
+     77.71336
+    ],
+    [
+     13.02242,
+     77.71289
+    ],
+    [
+     13.02419,
+     77.71133
+    ],
+    [
+     13.02593,
+     77.70978
+    ],
+    [
+     13.03085,
+     77.7053
+    ],
+    [
+     13.03595,
+     77.70344
+    ],
+    [
+     13.04085,
+     77.70347
+    ],
+    [
+     13.04633,
+     77.70223
+    ],
+    [
+     13.05189,
+     77.70098
+    ],
+    [
+     13.05748,
+     77.69798
+    ],
+    [
+     13.06348,
+     77.69474
+    ],
+    [
+     13.06952,
+     77.69151
+    ],
+    [
+     13.07518,
+     77.68848
+    ],
+    [
+     13.08096,
+     77.68518
+    ],
+    [
+     13.08633,
+     77.68097
+    ],
+    [
+     13.09062,
+     77.6775
+    ],
+    [
+     13.09586,
+     77.67513
+    ],
+    [
+     13.10106,
+     77.67271
+    ],
+    [
+     13.10724,
+     77.6739
+    ],
+    [
+     13.11379,
+     77.67511
+    ],
+    [
+     13.11999,
+     77.67572
+    ],
+    [
+     13.1244,
+     77.67561
+    ],
+    [
+     13.12919,
+     77.67554
+    ],
+    [
+     13.13496,
+     77.67582
+    ],
+    [
+     13.14499,
+     77.675
+    ]
+   ]
+  },
+  {
+   "id": "L2",
+   "from": "hoodi",
+   "to": "epip-whitefield",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "osm",
+   "path": [
+    [
+     12.9952,
+     77.71204
+    ],
+    [
+     12.98897,
+     77.71366
+    ],
+    [
+     12.98832,
+     77.71361
+    ],
+    [
+     12.98723,
+     77.71406
+    ],
+    [
+     12.98495,
+     77.7146
+    ],
+    [
+     12.98279,
+     77.71511
+    ],
+    [
+     12.98266,
+     77.71517
+    ],
+    [
+     12.98166,
+     77.71584
+    ],
+    [
+     12.97671,
+     77.71772
+    ]
+   ]
+  },
+  {
+   "id": "L3",
+   "from": "hoodi",
+   "to": "itpl",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L4",
+   "from": "hoodi",
+   "to": "iti",
+   "capacity_mw": 164.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L5",
+   "from": "yelahanka-powergrid",
+   "to": "puttenahalli",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L6",
+   "from": "yelahanka-powergrid",
+   "to": "sahakar-nagara",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L7",
+   "from": "bagalur",
+   "to": "kiadb",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L8",
+   "from": "bagalur",
+   "to": "kiadb-2",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L9",
+   "from": "mylasandra",
+   "to": "yerandanahalli",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "osm",
+   "path": [
+    [
+     12.84262,
+     77.62455
+    ],
+    [
+     12.84083,
+     77.63106
+    ],
+    [
+     12.8392,
+     77.63318
+    ],
+    [
+     12.83791,
+     77.63486
+    ],
+    [
+     12.83597,
+     77.63685
+    ],
+    [
+     12.83393,
+     77.63902
+    ],
+    [
+     12.83225,
+     77.64079
+    ],
+    [
+     12.83019,
+     77.64293
+    ],
+    [
+     12.82821,
+     77.64508
+    ],
+    [
+     12.82636,
+     77.64697
+    ],
+    [
+     12.82462,
+     77.64886
+    ],
+    [
+     12.82247,
+     77.65124
+    ],
+    [
+     12.82142,
+     77.65384
+    ],
+    [
+     12.82034,
+     77.65651
+    ],
+    [
+     12.81923,
+     77.65919
+    ],
+    [
+     12.81814,
+     77.66193
+    ],
+    [
+     12.81756,
+     77.66336
+    ],
+    [
+     12.81715,
+     77.66437
+    ],
+    [
+     12.816,
+     77.66715
+    ],
+    [
+     12.81549,
+     77.66859
+    ],
+    [
+     12.81504,
+     77.66979
+    ],
+    [
+     12.81473,
+     77.67068
+    ],
+    [
+     12.81382,
+     77.67319
+    ],
+    [
+     12.81299,
+     77.67535
+    ],
+    [
+     12.81208,
+     77.67787
+    ],
+    [
+     12.80845,
+     77.68336
+    ]
+   ]
+  },
+  {
+   "id": "L10",
+   "from": "mylasandra",
+   "to": "naganathapura",
+   "capacity_mw": 600.0,
+   "voltage_kv": 400,
+   "source": "osm",
+   "path": [
+    [
+     12.84262,
+     77.62455
+    ],
+    [
+     12.84775,
+     77.62407
+    ],
+    [
+     12.84888,
+     77.62779
+    ],
+    [
+     12.85062,
+     77.62916
+    ],
+    [
+     12.85286,
+     77.63103
+    ],
+    [
+     12.85524,
+     77.63293
+    ],
+    [
+     12.85762,
+     77.63493
+    ],
+    [
+     12.86033,
+     77.6375
+    ],
+    [
+     12.86254,
+     77.63963
+    ],
+    [
+     12.86496,
+     77.64189
+    ],
+    [
+     12.86719,
+     77.6439
+    ],
+    [
+     12.86978,
+     77.64645
+    ],
+    [
+     12.87204,
+     77.64861
+    ],
+    [
+     12.87293,
+     77.64973
+    ],
+    [
+     12.8739,
+     77.65109
+    ],
+    [
+     12.87562,
+     77.65353
+    ],
+    [
+     12.87455,
+     77.65781
+    ]
+   ]
+  },
+  {
+   "id": "L11",
+   "from": "srs-peenya",
+   "to": "brindavan",
+   "capacity_mw": 558.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L12",
+   "from": "srs-peenya",
+   "to": "mathikere",
+   "capacity_mw": 381.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L13",
+   "from": "hsr-layout",
+   "to": "vikas-tech-park",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L14",
+   "from": "hsr-layout",
+   "to": "naganathapura",
+   "capacity_mw": 484.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L15",
+   "from": "hsr-layout",
+   "to": "220-33kv-gis-central-silk-board",
+   "capacity_mw": 330.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L16",
+   "from": "nimhans",
+   "to": "east-division-compound",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L17",
+   "from": "nimhans",
+   "to": "220-33kv-gis-central-silk-board",
+   "capacity_mw": 227.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L18",
+   "from": "epip-whitefield",
+   "to": "sobha-dream-acres",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "osm",
+   "path": [
+    [
+     12.97671,
+     77.71772
+    ],
+    [
+     12.97067,
+     77.72046
+    ],
+    [
+     12.96804,
+     77.72127
+    ],
+    [
+     12.96624,
+     77.72183
+    ],
+    [
+     12.96459,
+     77.72236
+    ],
+    [
+     12.96294,
+     77.72285
+    ],
+    [
+     12.96055,
+     77.72105
+    ],
+    [
+     12.95884,
+     77.71979
+    ],
+    [
+     12.95707,
+     77.71845
+    ],
+    [
+     12.95607,
+     77.71794
+    ],
+    [
+     12.95374,
+     77.71798
+    ],
+    [
+     12.95044,
+     77.7175
+    ],
+    [
+     12.9501,
+     77.71754
+    ],
+    [
+     12.94959,
+     77.71729
+    ],
+    [
+     12.94847,
+     77.71723
+    ],
+    [
+     12.94771,
+     77.71717
+    ],
+    [
+     12.94735,
+     77.71707
+    ],
+    [
+     12.9452,
+     77.71767
+    ],
+    [
+     12.94197,
+     77.71858
+    ],
+    [
+     12.93931,
+     77.71936
+    ],
+    [
+     12.93707,
+     77.72001
+    ],
+    [
+     12.93099,
+     77.72308
+    ]
+   ]
+  },
+  {
+   "id": "L19",
+   "from": "epip-whitefield",
+   "to": "itpl",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L20",
+   "from": "kumbalagodu",
+   "to": "tataguni",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L21",
+   "from": "kumbalagodu",
+   "to": "vrishabavathi-valley",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L22",
+   "from": "subramanyapura",
+   "to": "khodays-glass-factory",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L23",
+   "from": "subramanyapura",
+   "to": "vrishabavathi-valley",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L24",
+   "from": "sarjapur",
+   "to": "sobha-dream-acres",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L25",
+   "from": "sarjapur",
+   "to": "whitefield",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L26",
+   "from": "tataguni",
+   "to": "khodays-glass-factory",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L27",
+   "from": "tataguni",
+   "to": "vrishabavathi-valley",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "osm",
+   "path": [
+    [
+     12.84669,
+     77.51539
+    ],
+    [
+     12.85154,
+     77.51801
+    ],
+    [
+     12.85506,
+     77.51916
+    ],
+    [
+     12.85766,
+     77.52036
+    ],
+    [
+     12.86164,
+     77.52136
+    ],
+    [
+     12.86401,
+     77.52194
+    ],
+    [
+     12.86664,
+     77.52262
+    ],
+    [
+     12.8715,
+     77.52247
+    ],
+    [
+     12.87382,
+     77.52244
+    ],
+    [
+     12.87795,
+     77.52257
+    ],
+    [
+     12.8801,
+     77.52259
+    ],
+    [
+     12.88322,
+     77.52259
+    ],
+    [
+     12.88907,
+     77.52263
+    ],
+    [
+     12.89079,
+     77.52274
+    ],
+    [
+     12.89549,
+     77.52306
+    ],
+    [
+     12.89872,
+     77.52328
+    ],
+    [
+     12.9041,
+     77.52363
+    ],
+    [
+     12.90658,
+     77.5238
+    ],
+    [
+     12.9091,
+     77.52396
+    ],
+    [
+     12.91353,
+     77.52425
+    ],
+    [
+     12.91561,
+     77.52439
+    ],
+    [
+     12.91956,
+     77.52465
+    ],
+    [
+     12.92182,
+     77.52479
+    ],
+    [
+     12.92433,
+     77.52495
+    ],
+    [
+     12.92738,
+     77.52435
+    ],
+    [
+     12.92812,
+     77.52337
+    ],
+    [
+     12.93067,
+     77.52017
+    ],
+    [
+     12.93575,
+     77.52055
+    ]
+   ]
+  },
+  {
+   "id": "L28",
+   "from": "yerandanahalli",
+   "to": "naganathapura",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L29",
+   "from": "puttenahalli",
+   "to": "sahakar-nagara",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L30",
+   "from": "hebbal",
+   "to": "cpri",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "osm",
+   "path": [
+    [
+     13.0303,
+     77.58241
+    ],
+    [
+     13.0258,
+     77.58119
+    ]
+   ]
+  },
+  {
+   "id": "L31",
+   "from": "hebbal",
+   "to": "hbr-layout",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L32",
+   "from": "hebbal",
+   "to": "mathikere",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L33",
+   "from": "sahakar-nagara",
+   "to": "manyata",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "osm",
+   "path": [
+    [
+     13.06548,
+     77.58231
+    ],
+    [
+     13.06187,
+     77.58755
+    ],
+    [
+     13.06034,
+     77.58968
+    ],
+    [
+     13.05999,
+     77.59015
+    ],
+    [
+     13.05911,
+     77.59134
+    ],
+    [
+     13.05866,
+     77.59316
+    ],
+    [
+     13.05849,
+     77.59384
+    ],
+    [
+     13.05767,
+     77.59695
+    ],
+    [
+     13.05754,
+     77.59744
+    ],
+    [
+     13.05747,
+     77.59772
+    ],
+    [
+     13.05713,
+     77.59921
+    ],
+    [
+     13.05635,
+     77.60222
+    ],
+    [
+     13.05539,
+     77.60596
+    ],
+    [
+     13.05479,
+     77.60838
+    ],
+    [
+     13.05293,
+     77.61509
+    ]
+   ]
+  },
+  {
+   "id": "L34",
+   "from": "cpri",
+   "to": "a-station",
+   "capacity_mw": 193.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L35",
+   "from": "cpri",
+   "to": "mathikere",
+   "capacity_mw": 211.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L36",
+   "from": "a-station",
+   "to": "east-division-compound",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L37",
+   "from": "hbr-layout",
+   "to": "manyata",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L38",
+   "from": "kiadb",
+   "to": "kiadb-2",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L39",
+   "from": "vikas-tech-park",
+   "to": "exora",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L40",
+   "from": "vikas-tech-park",
+   "to": "sobha-dream-acres",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L41",
+   "from": "exora",
+   "to": "hal",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L42",
+   "from": "exora",
+   "to": "sobha-dream-acres",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L43",
+   "from": "vrishabavathi-valley",
+   "to": "nagarbhavi",
+   "capacity_mw": 478.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L44",
+   "from": "hal",
+   "to": "iti",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L45",
+   "from": "itpl",
+   "to": "whitefield",
+   "capacity_mw": 150.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L46",
+   "from": "nagarbhavi",
+   "to": "brindavan",
+   "capacity_mw": 526.0,
+   "voltage_kv": 220,
+   "source": "inferred"
+  },
+  {
+   "id": "L47",
+   "from": "GRID",
+   "to": "hoodi",
+   "capacity_mw": 600.0,
+   "voltage_kv": 400,
+   "source": "grid-entry"
+  },
+  {
+   "id": "L48",
+   "from": "GRID",
+   "to": "yelahanka-powergrid",
+   "capacity_mw": 600.0,
+   "voltage_kv": 400,
+   "source": "grid-entry"
+  },
+  {
+   "id": "L49",
+   "from": "GRID",
+   "to": "bagalur",
+   "capacity_mw": 600.0,
+   "voltage_kv": 400,
+   "source": "grid-entry"
+  },
+  {
+   "id": "L50",
+   "from": "GRID",
+   "to": "mylasandra",
+   "capacity_mw": 600.0,
+   "voltage_kv": 400,
+   "source": "grid-entry"
+  },
+  {
+   "id": "L51",
+   "from": "GRID",
+   "to": "srs-peenya",
+   "capacity_mw": 1166.0,
+   "voltage_kv": 400,
+   "source": "grid-entry"
+  }
+ ],
+ "feeders": [
+  {
+   "name": "Adugodi",
+   "lat": 12.93259,
+   "lon": 77.61304,
+   "voltage_kv": 66,
+   "parent": "220-33kv-gis-central-silk-board"
+  },
+  {
+   "name": "RMV Layout",
+   "lat": 13.03682,
+   "lon": 77.56639,
+   "voltage_kv": 66,
+   "parent": "mathikere"
+  },
+  {
+   "name": "BMTC",
+   "lat": 12.95438,
+   "lon": 77.59394,
+   "voltage_kv": 66,
+   "parent": "nimhans"
+  },
+  {
+   "name": "Nandhini Layout",
+   "lat": 13.01109,
+   "lon": 77.53828,
+   "voltage_kv": 66,
+   "parent": "srs-peenya"
+  },
+  {
+   "name": "Golf Links",
+   "lat": 12.95364,
+   "lon": 77.64131,
+   "voltage_kv": 66,
+   "parent": "hal"
+  },
+  {
+   "name": "Domasandra",
+   "lat": 12.88909,
+   "lon": 77.73552,
+   "voltage_kv": 66,
+   "parent": "sobha-dream-acres"
+  },
+  {
+   "name": "ISRO Layout",
+   "lat": 12.89847,
+   "lon": 77.55695,
+   "voltage_kv": 66,
+   "parent": "subramanyapura"
+  },
+  {
+   "name": "LR Bande",
+   "lat": 13.02862,
+   "lon": 77.61027,
+   "voltage_kv": 66,
+   "parent": "hbr-layout"
+  },
+  {
+   "name": "Hoskote",
+   "lat": 13.07208,
+   "lon": 77.78885,
+   "voltage_kv": 66,
+   "parent": "itpl"
+  },
+  {
+   "name": "Kondaspura",
+   "lat": 13.03781,
+   "lon": 77.75479,
+   "voltage_kv": 66,
+   "parent": "itpl"
+  },
+  {
+   "name": "Padmanabha Nagar",
+   "lat": 12.92211,
+   "lon": 77.56066,
+   "voltage_kv": 66,
+   "parent": "subramanyapura"
+  },
+  {
+   "name": "B Station",
+   "lat": 12.97405,
+   "lon": 77.61378,
+   "voltage_kv": 66,
+   "parent": "east-division-compound"
+  },
+  {
+   "name": "KHB Yelahanka",
+   "lat": 13.10929,
+   "lon": 77.57737,
+   "voltage_kv": 66,
+   "parent": "puttenahalli"
+  },
+  {
+   "name": "Wheel & Axle",
+   "lat": 13.10724,
+   "lon": 77.58488,
+   "voltage_kv": 66,
+   "parent": "puttenahalli"
+  },
+  {
+   "name": "Austin Town",
+   "lat": 12.96386,
+   "lon": 77.61489,
+   "voltage_kv": 66,
+   "parent": "east-division-compound"
+  },
+  {
+   "name": "Koramangala",
+   "lat": 12.94315,
+   "lon": 77.62393,
+   "voltage_kv": 66,
+   "parent": "220-33kv-gis-central-silk-board"
+  },
+  {
+   "name": "Chandra Layout",
+   "lat": 12.95866,
+   "lon": 77.52866,
+   "voltage_kv": 66,
+   "parent": "nagarbhavi"
+  },
+  {
+   "name": "Mahalakshmi Layout",
+   "lat": 13.00111,
+   "lon": 77.54821,
+   "voltage_kv": 66,
+   "parent": "a-station"
+  },
+  {
+   "name": "Vijaya Nagar",
+   "lat": 12.98015,
+   "lon": 77.53625,
+   "voltage_kv": 66,
+   "parent": "nagarbhavi"
+  },
+  {
+   "name": "Jayadeva",
+   "lat": 12.92011,
+   "lon": 77.59911,
+   "voltage_kv": 66,
+   "parent": "nimhans"
+  },
+  {
+   "name": "Banaswadi",
+   "lat": 13.0204,
+   "lon": 77.64911,
+   "voltage_kv": 66,
+   "parent": "hbr-layout"
+  },
+  {
+   "name": "C Station",
+   "lat": 12.99237,
+   "lon": 77.59943,
+   "voltage_kv": 66,
+   "parent": "east-division-compound"
+  },
+  {
+   "name": "IISc MUSS",
+   "lat": 13.01506,
+   "lon": 77.56363,
+   "voltage_kv": 66,
+   "parent": "cpri"
+  },
+  {
+   "name": "Pottery Road",
+   "lat": 13.0019,
+   "lon": 77.61912,
+   "voltage_kv": 66,
+   "parent": "hbr-layout"
+  },
+  {
+   "name": "Brigade Gateway",
+   "lat": 13.01479,
+   "lon": 77.55549,
+   "voltage_kv": 66,
+   "parent": "mathikere"
+  },
+  {
+   "name": "Substation",
+   "lat": 12.87503,
+   "lon": 77.61182,
+   "voltage_kv": 66,
+   "parent": "mylasandra"
+  },
+  {
+   "name": "HMT Layout",
+   "lat": 13.03451,
+   "lon": 77.50016,
+   "voltage_kv": 66,
+   "parent": "brindavan"
+  },
+  {
+   "name": "Kanteerava Stadium",
+   "lat": 12.96991,
+   "lon": 77.59172,
+   "voltage_kv": 66,
+   "parent": "east-division-compound"
+  },
+  {
+   "name": "Victoria Hospital",
+   "lat": 12.96426,
+   "lon": 77.573,
+   "voltage_kv": 66,
+   "parent": "a-station"
+  },
+  {
+   "name": "Telecom Layout",
+   "lat": 12.96685,
+   "lon": 77.54579,
+   "voltage_kv": 66,
+   "parent": "nagarbhavi"
+  },
+  {
+   "name": "Kodigehalli",
+   "lat": 12.98223,
+   "lon": 77.45246,
+   "voltage_kv": 66,
+   "parent": "nagarbhavi"
+  },
+  {
+   "name": "Srigandhakavalu",
+   "lat": 12.9788,
+   "lon": 77.50351,
+   "voltage_kv": 66,
+   "parent": "nagarbhavi"
+  },
+  {
+   "name": "National College",
+   "lat": 12.95296,
+   "lon": 77.57347,
+   "voltage_kv": 66,
+   "parent": "nimhans"
+  },
+  {
+   "name": "Jayanagar",
+   "lat": 12.93229,
+   "lon": 77.58339,
+   "voltage_kv": 66,
+   "parent": "nimhans"
+  },
+  {
+   "name": "REMCO",
+   "lat": 12.9457,
+   "lon": 77.53098,
+   "voltage_kv": 66,
+   "parent": "vrishabavathi-valley"
+  },
+  {
+   "name": "ITC",
+   "lat": 12.99793,
+   "lon": 77.62372,
+   "voltage_kv": 66,
+   "parent": "east-division-compound"
+  },
+  {
+   "name": "St Johns Wood",
+   "lat": 12.92912,
+   "lon": 77.60969,
+   "voltage_kv": 66,
+   "parent": "220-33kv-gis-central-silk-board"
+  },
+  {
+   "name": "Arehalli",
+   "lat": 12.91577,
+   "lon": 77.54338,
+   "voltage_kv": 66,
+   "parent": "subramanyapura"
+  },
+  {
+   "name": "Banashankari",
+   "lat": 12.93472,
+   "lon": 77.53875,
+   "voltage_kv": 66,
+   "parent": "vrishabavathi-valley"
+  },
+  {
+   "name": "Rajajeshwari Nagar",
+   "lat": 12.91417,
+   "lon": 77.52849,
+   "voltage_kv": 66,
+   "parent": "vrishabavathi-valley"
+  },
+  {
+   "name": "Chokkasandra",
+   "lat": 12.87371,
+   "lon": 77.72951,
+   "voltage_kv": 66,
+   "parent": "sobha-dream-acres"
+  },
+  {
+   "name": "VIdyanagara",
+   "lat": 13.153,
+   "lon": 77.63143,
+   "voltage_kv": 66,
+   "parent": "bagalur"
+  },
+  {
+   "name": "BMRCL RSS",
+   "lat": 12.98843,
+   "lon": 77.74914,
+   "voltage_kv": 66,
+   "parent": "itpl"
+  },
+  {
+   "name": "Provident Sunworth",
+   "lat": 12.88467,
+   "lon": 77.47122,
+   "voltage_kv": 66,
+   "parent": "kumbalagodu"
+  },
+  {
+   "name": "Kachamaranahalli",
+   "lat": 12.91077,
+   "lon": 77.73023,
+   "voltage_kv": 66,
+   "parent": "sobha-dream-acres"
+  },
+  {
+   "name": "Hinduja Ecopolis",
+   "lat": 13.12516,
+   "lon": 77.6156,
+   "voltage_kv": 66,
+   "parent": "puttenahalli"
+  },
+  {
+   "name": "Brigade Tech Gardens Brookefield",
+   "lat": 12.96387,
+   "lon": 77.72238,
+   "voltage_kv": 66,
+   "parent": "epip-whitefield"
+  },
+  {
+   "name": "Anjanapura",
+   "lat": 12.86023,
+   "lon": 77.55567,
+   "voltage_kv": 66,
+   "parent": "khodays-glass-factory"
+  },
+  {
+   "name": "MUSS NGEF",
+   "lat": 12.99207,
+   "lon": 77.65772,
+   "voltage_kv": 66,
+   "parent": "hal"
+  },
+  {
+   "name": "Kambipura",
+   "lat": 12.87628,
+   "lon": 77.45229,
+   "voltage_kv": 66,
+   "parent": "kumbalagodu"
+  },
+  {
+   "name": "Bylakere 66kV",
+   "lat": 13.10694,
+   "lon": 77.52025,
+   "voltage_kv": 66,
+   "parent": "yelahanka-powergrid"
+  },
+  {
+   "name": "Doddabettahalli 66kV",
+   "lat": 13.10012,
+   "lon": 77.55048,
+   "voltage_kv": 66,
+   "parent": "puttenahalli"
+  },
+  {
+   "name": "Keppel Purvankara Park Square",
+   "lat": 12.86068,
+   "lon": 77.54094,
+   "voltage_kv": 66,
+   "parent": "khodays-glass-factory"
+  },
+  {
+   "name": "Somashettihalli 66kV",
+   "lat": 13.07994,
+   "lon": 77.51805,
+   "voltage_kv": 66,
+   "parent": "srs-peenya"
+  }
+ ]
+}

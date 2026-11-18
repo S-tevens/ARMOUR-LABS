@@ -76,6 +76,9 @@ class CityEngine:
         }
         self.energy_not_served_mwh = 0.0
         self.peak_unserved = 0
+        self.failures: list[dict] = []  # the order things failed in this incident (the domino effect)
+        self._dark_prev: set[str] = set()
+        self._fac_prev: dict[str, str] = {}
         # scenarios, events, containment
         self.active: str | None = None
         self._active_since = 0
@@ -131,7 +134,7 @@ class CityEngine:
             raise KeyError(name)
         if self.active:
             self.stop_scenario()
-        self.energy_not_served_mwh, self.peak_unserved = 0.0, 0  # impact is accounted per incident
+        self._reset_incident_accounting()
         self.active = name
         self._active_since = self.tick
         try:
@@ -151,8 +154,18 @@ class CityEngine:
         self.forecast_target = 1.0
         self.attack_target = 1.0
         self.stale.clear()
-        self.energy_not_served_mwh, self.peak_unserved = 0.0, 0
+        self._reset_incident_accounting()
         self.unit_actions.append(("*", "reset"))
+
+    def _reset_incident_accounting(self) -> None:
+        self.energy_not_served_mwh, self.peak_unserved = 0.0, 0
+        self.failures = []
+        self._dark_prev = set()
+        self._fac_prev = {}
+
+    def _fail(self, kind: str, ident: str, text: str) -> None:
+        self.failures.append({"n": len(self.failures) + 1, "t": self.t, "kind": kind, "id": ident, "text": text})
+        del self.failures[:-60]
 
     def ground_truth(self) -> dict:
         info = scenarios.SCENARIO_INFO.get(self.active) if self.active else None
@@ -216,6 +229,8 @@ class CityEngine:
             self.out_reason[worst] = "protection"
             self.overload_ticks[worst] = 0
             self.emit(f"RELAY-{worst}", "CITY-SCADA", "TRIP", worst, f"{worst_load * 100:.0f}%", True)
+            ln = next(l for l in self.cfg.lines if l.id == worst)
+            self._fail("line", worst, f"{self._label(ln.a)} to {self._label(ln.b)} line tripped at {worst_load * 100:.0f}% of its rating")
             flows, energised = self._solve(self.demand_mw)
         self.flows, self.energised = flows, energised
 
@@ -225,6 +240,7 @@ class CityEngine:
         lost_frac = unserved_mw / total_demand if total_demand else 0.0
         self.frequency += ((50.0 + 2.0 * lost_frac) - self.frequency) * 0.2
         self._update_facilities(dark)
+        self._record_failures(dark)
         self.energy_not_served_mwh += unserved_mw * MINUTES_PER_TICK / 60.0
         people = sum(self.cfg.district(d).population for d in dark)
         self.peak_unserved = max(self.peak_unserved, people)
@@ -233,6 +249,23 @@ class CityEngine:
         self.tick += 1
         events, self._pending = self._pending, []
         return CityStep(state=self.snapshot(), events=events)
+
+    def _label(self, node: str) -> str:
+        return "the state grid" if node == SLACK else self.cfg.district(node).name
+
+    def _record_failures(self, dark: list[str]) -> None:
+        now = set(dark)
+        for did in dark:
+            if did not in self._dark_prev:
+                self._fail("district", did, f"{self.cfg.district(did).name} lost power")
+        self._dark_prev = now
+        for d in self.cfg.districts:
+            for f in d.facilities:
+                status = self.facilities[f.id].status
+                prev = self._fac_prev.get(f.id, "ok")
+                if f.type == "hospital" and status != prev and status in ("backup", "down"):
+                    self._fail("facility", f.id, f"Hospital in {d.name} " + ("switched to backup power" if status == "backup" else "ran out of backup power"))
+                self._fac_prev[f.id] = status
 
     def dark_districts(self) -> list[str]:
         return [d.id for d in self.cfg.districts if not (d.id in self.energised and self.main_closed[d.id])]
@@ -289,4 +322,4 @@ class CityEngine:
             "restoration_pct": 100 if self.peak_unserved == 0 else round(100 * (1 - people / self.peak_unserved)),
         }
         return {"t": self.t, "tick": self.tick, "frequency": round(self.frequency, 3), "districts": districts,
-                "lines": lines, "impact": impact, "scenario": self.active}
+                "lines": lines, "impact": impact, "scenario": self.active, "failures": list(self.failures)}

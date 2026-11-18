@@ -10,13 +10,9 @@ if TYPE_CHECKING:
     from city.engine import CityEngine
 
 ATTACKER_IP = "10.0.0.66"
-DEFAULT_TRIP_DISTRICTS = ["in", "kr", "jy"]
-DEFAULT_STALE_DISTRICTS = ["hb"]
 ATTACK_DEMAND_FACTOR = 1.75
 EVENING_PEAK_FACTOR = 1.25
 FLOOD_PER_TICK = 25
-FAULT_LINE = "L6"
-MAINTENANCE_LINE = "L5"
 
 SCENARIO_INFO: dict[str, dict] = {
     "coordinated_substation_trip": {
@@ -24,7 +20,7 @@ SCENARIO_INFO: dict[str, dict] = {
         "kind": "attack",
         "group": "core",
         "mitre": "T0855 Unauthorized Command Message",
-        "description": "An attacker opens the main breakers of three districts at once (the Ukraine 2015 pattern).",
+        "description": "An attacker opens the breakers of three central substations at once (the Ukraine 2015 pattern).",
     },
     "load_altering_attack": {
         "label": "Load-altering attack",
@@ -45,7 +41,7 @@ SCENARIO_INFO: dict[str, dict] = {
         "kind": "benign",
         "group": "extra",
         "mitre": None,
-        "description": "SCADA opens line L5 for maintenance. Power reroutes; nothing should be flagged.",
+        "description": "SCADA opens a transmission line for maintenance. Power reroutes; nothing should be flagged.",
     },
     "evening_peak": {
         "label": "Hot-evening demand peak (natural)",
@@ -59,14 +55,14 @@ SCENARIO_INFO: dict[str, dict] = {
         "kind": "fault",
         "group": "extra",
         "mitre": None,
-        "description": "Line L6 trips on a fault. No malicious traffic; power reroutes.",
+        "description": "A transmission line trips on a fault. No malicious traffic; power reroutes.",
     },
 }
 
 
 def start(name: str, eng: "CityEngine", districts: list[str] | None = None) -> None:
     if name == "coordinated_substation_trip":
-        for did in districts or DEFAULT_TRIP_DISTRICTS:
+        for did in districts or eng.cfg.defaults["trip_districts"]:
             if did not in eng.main_closed:
                 raise ValueError(f"unknown district {did}")
             eng.main_closed[did] = False
@@ -76,19 +72,20 @@ def start(name: str, eng: "CityEngine", districts: list[str] | None = None) -> N
         eng.attack_target = ATTACK_DEMAND_FACTOR
         eng.emit(ATTACKER_IP, "EV-GATEWAY", "WRITE_SETPOINT", "CHARGER_LOAD", "MAX", False)
     elif name == "comms_loss":
-        chosen = districts or DEFAULT_STALE_DISTRICTS
+        chosen = districts or eng.cfg.defaults["stale_districts"]
         unknown = [d for d in chosen if d not in eng.main_closed]
         if unknown:
             raise ValueError(f"unknown district {unknown[0]}")
         eng.stale = set(chosen)
     elif name == "planned_maintenance":
-        eng.command(f"LINE_{MAINTENANCE_LINE}", "OPEN")
+        eng.command(f"LINE_{eng.cfg.defaults['maintenance_line']}", "OPEN")
     elif name == "evening_peak":
         eng.forecast_target = EVENING_PEAK_FACTOR
     elif name == "line_fault":
-        eng.service.discard(FAULT_LINE)
-        eng.out_reason[FAULT_LINE] = "fault"
-        eng.emit(f"RELAY-{FAULT_LINE}", "CITY-SCADA", "TRIP", FAULT_LINE, "fault", True)  # a legitimate protection report
+        fault = eng.cfg.defaults["fault_line"]
+        eng.service.discard(fault)
+        eng.out_reason[fault] = "fault"
+        eng.emit(f"RELAY-{fault}", "CITY-SCADA", "TRIP", fault, "fault", True)  # a legitimate protection report
     else:
         raise KeyError(name)
 

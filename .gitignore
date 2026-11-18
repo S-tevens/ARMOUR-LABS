@@ -20,3 +20,6 @@ Thumbs.db
 
 # Generated datasets (reproducible, see data/README.md)
 data/generated/
+
+# Raw OpenStreetMap downloads (re-create with python -m city.tools.fetch_osm)
+backend/city/tools/raw/
