@@ -5,8 +5,8 @@ Stay inside your own folders. Ask before editing someone else's.
 
 | Area | Folders | Owner |
 |---|---|---|
-| Frontend | `frontend/` | P1 |
-| Simulation, attacks, twin | `backend/sim/`, `backend/twin/`, `data/` | P2 |
+| Frontend | `frontend/` (the city view is `frontend/src/city/`) | P1 |
+| Simulation, attacks, twin | `backend/sim/`, `backend/twin/`, `backend/city/` (model), `data/` | P2 |
 | Detection, incidents, API, storage | `backend/detect/`, `backend/incident/`, `backend/api/`, `backend/db/` | P3 |
 | Contracts | `backend/core/contracts.py`, `frontend/src/types.ts`, `docs/contracts.md` | all (everyone must agree) |
 

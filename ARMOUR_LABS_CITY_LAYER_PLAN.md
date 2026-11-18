@@ -6,6 +6,16 @@ A second layer above the substation we already have. The city shows *where* and 
 
 ---
 
+## Status
+
+Built and tested (46 backend tests, frontend type-check and build): the city model (config, linear power flow, engine with protection, cascades, facilities and impact), the six city scenarios, staged priority restoration, city recovery verification, the city twin with its leak test, rule-based city detection and classification with campaign grouping, the city runtime driving one substation unit per district, the API and `/ws/city`, and the city view (map, impact strip, ranked "What's happening" list, district card, recovery checklist, simulator, breadcrumb navigation into each substation). See [docs/city-contracts.md](docs/city-contracts.md).
+
+Not built yet: the restoration dry-run (P2.10), the city replay scrubber (P1.10), the campaign kill-chain timeline (P1.9), city evaluation metrics (P3.6), a city dataset generator (P2.11), the guided demo mode and the formal 5-second test with three viewers (P1.11), and the substation incident classification (still a placeholder; the city already has a rule table).
+
+Where this differs from the plan below: the city engine does not wrap a full substation per district for its flows. Each district is a distribution-level node with its own main breaker, and a full substation unit per district reacts to what the city does to it (islanding, demand), which keeps the physics simple and the drill-down real.
+
+---
+
 ## 1. The frontend must stay clean and easy to read
 
 These are hard requirements, not suggestions. Every frontend task is reviewed against them.

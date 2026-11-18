@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { API_URL, WS_URL } from "./api";
+import { API_URL, districtQuery, telemetryUrl } from "./api";
 import type { Incident, NetworkEvent, Scores, StreamMessage, Telemetry, TwinState } from "./types";
 
 export const HISTORY = 90;
@@ -36,20 +36,21 @@ const EMPTY: StreamState = {
 const tail = <T,>(a: T[], x: T): T[] => [...a, x].slice(-HISTORY);
 
 /** Subscribes to the backend WebSocket and keeps the latest state. Reconnects automatically. */
-export function useStream(): StreamState {
+export function useStream(district?: string): StreamState {
   const [state, setState] = useState<StreamState>(EMPTY);
 
   useEffect(() => {
+    setState(EMPTY); // switching district starts from a clean slate
     let ws: WebSocket | null = null;
     let timer: number | undefined;
     let closed = false;
 
     const connect = () => {
-      ws = new WebSocket(WS_URL);
+      ws = new WebSocket(telemetryUrl(district));
       ws.onopen = () => {
         setState((s) => ({ ...s, connected: true }));
         // Pick up incidents that opened before this page loaded (reload, late join).
-        fetch(`${API_URL}/incidents`)
+        fetch(`${API_URL}/incidents${districtQuery(district)}`)
           .then((r) => r.json() as Promise<Incident[]>)
           .then((list) =>
             setState((s) => ({ ...s, incidents: { ...Object.fromEntries(list.map((i) => [i.id, i])), ...s.incidents } })),
@@ -91,7 +92,7 @@ export function useStream(): StreamState {
       window.clearTimeout(timer);
       ws?.close();
     };
-  }, []);
+  }, [district]);
 
   return state;
 }

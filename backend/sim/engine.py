@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from core.contracts import NetworkEvent, Telemetry
 from sim import scenarios
 from sim.containment import Containment
-from sim.plant import Plant
+from sim.plant import Plant, PlantParams
 
 HEARTBEAT_EVERY_TICKS = 5
 IEDS = ("IED-01", "IED-02", "IED-03")
@@ -31,8 +31,8 @@ class StepResult:
 
 
 class SimulationEngine:
-    def __init__(self, seed: int = 42) -> None:
-        self.plant = Plant(seed)
+    def __init__(self, seed: int = 42, params: PlantParams | None = None) -> None:
+        self.plant = Plant(seed, params)
         self.seq = 0
         self.active: str | None = None
         self._active_since_tick = 0
