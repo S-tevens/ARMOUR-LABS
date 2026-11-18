@@ -29,7 +29,10 @@ export default function PlainWords({ incident, load }: { incident: Incident; loa
     <div className="plain-words" aria-live="polite">
       <span className="plain-label">In plain words</span>
       <p>{x.text}</p>
-      <small className="muted">{who}{x.note ? `. ${x.note}` : ""}. Check it against the evidence.</small>
+      <small className="muted plain-who">
+        {x.source === "gemini" && <img src="/gemini.png" alt="" width="13" height="13" />}
+        <span>{who}{x.note ? `. ${x.note}` : ""}. Check it against the evidence.</span>
+      </small>
     </div>
   );
 }

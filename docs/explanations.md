@@ -11,7 +11,7 @@ Every incident card shows an **In plain words** summary above the raw evidence. 
 
 Both see only the incident's own data: severity, classification, status, affected devices, which detectors raised an alert, and the evidence lines. Nothing else about the system is sent. The data is simulated, so no real grid or personal data leaves the machine.
 
-The card always says who wrote the text ("Generated from the evidence below" or "Written by Gemini (model) from the evidence below") and reminds the reader to check it against the evidence.
+The card always says who wrote the text ("Generated from the evidence below" or "Written by Gemini (model) from the evidence below") and reminds the reader to check it against the evidence. A small Gemini mark appears beside that line only when Gemini wrote the text.
 
 ## Guard rails on the Gemini answer
 

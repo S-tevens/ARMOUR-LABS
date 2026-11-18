@@ -41,3 +41,5 @@
 .plain-words { margin: 12px 0 4px; padding: 12px 14px; border-radius: var(--r-md); background: var(--blue-soft); }
 .plain-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--blue); margin-bottom: 4px; }
 .plain-words p { margin: 0 0 6px; line-height: 1.5; }
+.plain-who { display: flex; align-items: center; gap: 6px; }
+.plain-who img { opacity: 0.85; flex: none; }
