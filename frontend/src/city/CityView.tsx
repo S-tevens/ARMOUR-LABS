@@ -61,10 +61,11 @@ export default function CityView({
             </div>
           )}
           <ul className="legend-map" aria-label="Legend">
-            <li><i className={`dot ${mapMode === "3d" ? "cyan" : "green"}`} /> Supplied</li>
+            <li><i className="dot green" /> Supplied</li>
             <li><i className="dot amber" /> Needs attention</li>
             <li><i className="dot red" /> Without power</li>
-            {mapMode === "2d" && <><li><i className="ln solid" /> Mapped line</li><li><i className="ln dashed" /> Inferred tie</li></>}
+            <li><i className="ln solid" /> Mapped line</li>
+            <li><i className="ln dashed" /> Inferred tie</li>
           </ul>
           {selected && <LocalGrid layout={layout} state={state} id={selected} onClose={() => setSelected(null)} onOpen={onOpenSubstation} />}
         </section>

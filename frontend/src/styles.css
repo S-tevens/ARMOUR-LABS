@@ -466,3 +466,7 @@ tr.row-bad td { background: rgba(229, 72, 77, 0.06); }
 .geographical.overview .geo-substation.is-selected .geo-node-name,
 .geographical.overview .geo-substation:hover .geo-node-name,
 .geographical.overview .geo-substation:focus-visible .geo-node-name { display: block; }
+
+/* facilities on the 3D map: same markers as the 2D map, shown when zoomed in */
+.city3d-canvas .fac-icon { display: none; }
+.city3d-canvas.show-fac .fac-icon { display: block; width: 18px; height: 18px; }

@@ -6,9 +6,12 @@ import type { FeatureCollection, LineString, Point } from "geojson";
 import type { CityLayout, CityState } from "./types";
 import { architecturalEdges } from "./ArchitecturalEdges";
 
-const COLORS = { ok: "#10a4bd", attention: "#e79b30", dark: "#e04b61", stale: "#8b9caf" };
+const COLORS = { ok: "#2db56a", attention: "#e79b30", dark: "#e04b61", stale: "#8b9caf" };
 maplibregl.setWorkerUrl(workerUrl);
 const CITY_CENTER: [number, number] = [77.5946, 12.9716];
+const FAC_GLYPH: Record<string, string> = { hospital: "+", metro: "M", airport: "A", water: "W", tech: "T" };
+const FAC_ZOOM = 12.5; // facilities appear when zoomed in this far, as on the 2D map
+const OVERVIEW = { pitch: 30, bearing: -12, padding: { top: 180, bottom: 130, left: 65, right: 65 } };
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
 type Props = { layout: CityLayout; state: CityState; selected: string | null; onSelect: (id: string) => void; onFallback: () => void };
 type Route = { id: string; points: number[][]; distances: number[]; length: number };
@@ -44,10 +47,10 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
   const orbit = useRef(false);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [detail, setDetail] = useState(true);
+  const [detail, setDetail] = useState(false);
   const [ink, setInk] = useState(true);
   const [building, setBuilding] = useState<{ height: number; levels: string } | null>(null);
-  const [zoom, setZoom] = useState(15.8);
+  const [zoom, setZoom] = useState(11);
 
   useEffect(() => {
     if (!host.current) return;
@@ -56,6 +59,9 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
     let disposed = false, map: maplibregl.Map | undefined, animation = 0;
     const markers: { id: string; marker: maplibregl.Marker; button: HTMLButtonElement }[] = [];
     const routes = routesFor(layout);
+    const facilities: { id: string; el: HTMLElement }[] = [];
+    const all = new maplibregl.LngLatBounds();
+    layout.districts.forEach(d => { if (d.lon != null && d.lat != null) all.extend([d.lon, d.lat]); });
     const setup = async () => {
       try {
         const response = await fetch("https://tiles.openfreemap.org/styles/positron", { signal: controller.signal });
@@ -73,16 +79,17 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
           if (layer.type === "symbol") layer.paint = { ...layer.paint, "text-color": "#6c7a82", "text-halo-color": "#ffffff", "text-halo-width": 1.5 };
         }
         if (disposed) return;
-        map = new maplibregl.Map({ container: host.current!, style, center: CITY_CENTER, zoom: 15.8, pitch: 58, bearing: -28, maxPitch: 75, minZoom: 9, maxZoom: 19, attributionControl: false, canvasContextAttributes: { antialias: true } });
+        map = new maplibregl.Map({ container: host.current!, style, center: all.isEmpty() ? CITY_CENTER : all.getCenter(), zoom: 10.5, pitch: OVERVIEW.pitch, bearing: OVERVIEW.bearing, maxPitch: 75, minZoom: 9, maxZoom: 19, attributionControl: false, canvasContextAttributes: { antialias: true } });
         mapRef.current = map;
         map.addControl(new maplibregl.AttributionControl({ compact: true }), "bottom-right");
         map.addControl(new maplibregl.ScaleControl({ maxWidth: 90, unit: "metric" }), "bottom-left");
         map.touchZoomRotate.enableRotation();
         map.on("error", e => { console.warn("City map resource:", e.error.message); });
-        map.on("zoomend", () => { if (!map) return; setZoom(map.getZoom()); setDetail(map.getZoom() >= 14); });
+        map.on("zoomend", () => { if (!map) return; setZoom(map.getZoom()); setDetail(map.getZoom() >= 14); host.current?.classList.toggle("show-fac", map.getZoom() >= FAC_ZOOM); });
         map.on("dragstart", () => { orbit.current = false; setOrbiting(false); });
         map.on("load", () => {
           if (!map || disposed) return;
+          if (!all.isEmpty()) map.fitBounds(all, { ...OVERVIEW, duration: 0 });
           const labelLayer = map.getStyle().layers.find(l => l.type === "symbol")?.id;
           map.setLight({ anchor: "viewport", color: "#ffffff", intensity: 0.52, position: [1.5, 190, 45] });
           map.addLayer({ id: "architectural-buildings", type: "fill-extrusion", source: "openmaptiles", "source-layer": "building", minzoom: 13,
@@ -107,6 +114,16 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
             const marker = new maplibregl.Marker({ element: button, anchor: "bottom" }).setLngLat([d.lon, d.lat]).addTo(map);
             markers.push({ id: d.id, marker, button });
           }
+          for (const d of layout.districts) for (const f of d.facilities) {
+            if (f.lat == null || f.lon == null) continue;
+            const el = document.createElement("div"); el.className = `fac-icon ${f.type}`;
+            el.innerHTML = `<span>${FAC_GLYPH[f.type] ?? "?"}</span>`;
+            el.title = `${f.name ?? f.type} (supplied via ${d.name})`;
+            new maplibregl.Marker({ element: el }).setLngLat([f.lon, f.lat]).addTo(map);
+            facilities.push({ id: f.id, el });
+          }
+          host.current?.classList.toggle("show-fac", map.getZoom() >= FAC_ZOOM);
+          setZoom(map.getZoom());
           const sync = () => {
             if (!map || !map.getSource("live-grid")) return;
             const current = latest.current;
@@ -117,6 +134,10 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
               return { type: "Feature", properties: { id: r.id, color, source: l.source }, geometry: { type: "LineString", coordinates: r.points } };
             }) };
             (map.getSource("live-grid") as GeoJSONSource).setData(data);
+            for (const f of facilities) {
+              const st = current.state.districts.flatMap(d => d.facilities).find(x => x.id === f.id)?.status;
+              for (const s of ["ok", "backup", "down"]) f.el.classList.toggle(`st-${s}`, st === s);
+            }
             for (const n of markers) {
               const s = current.state.districts.find(d => d.id === n.id);
               n.button.style.setProperty("--node-color", COLORS[s?.status ?? "stale"]);
@@ -150,7 +171,7 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
       } catch (error) { if (!disposed) { console.warn("3D map unavailable", error); setFailed(true); } }
     };
     void setup();
-    return () => { disposed = true; controller.abort(); cancelAnimationFrame(animation); updateRef.current = null; edgesRef.current?.dispose(); edgesRef.current = null; mapRef.current = null; markers.forEach(m => m.marker.remove()); map?.remove(); };
+    return () => { disposed = true; facilities.length = 0; controller.abort(); cancelAnimationFrame(animation); updateRef.current = null; edgesRef.current?.dispose(); edgesRef.current = null; mapRef.current = null; markers.forEach(m => m.marker.remove()); map?.remove(); };
   }, [layout]);
 
   useEffect(() => { updateRef.current?.(); }, [state, selected]);
@@ -162,7 +183,7 @@ export default function City3DMap({ layout, state, selected, onSelect, onFallbac
     const map = mapRef.current; if (!map) return;
     orbit.current = false; setOrbiting(false); setBuilding(null);
     const bounds = new maplibregl.LngLatBounds(); layout.districts.forEach(d => { if (d.lon != null && d.lat != null) bounds.extend([d.lon, d.lat]); });
-    map.fitBounds(bounds, { padding: { top: 180, bottom: 130, left: 65, right: 65 }, pitch: 30, bearing: -12, duration: 1400 });
+    map.fitBounds(bounds, { ...OVERVIEW, duration: 1400 });
   };
   const cityDetail = () => { orbit.current = false; setOrbiting(false); setBuilding(null); mapRef.current?.flyTo({ center: CITY_CENTER, zoom: 15.8, pitch: 58, bearing: -28, duration: 1400 }); };
   const toggleInk = () => {
