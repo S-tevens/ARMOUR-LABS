@@ -1,4 +1,4 @@
-"""Simulation engine: advances the plant, runs scenarios and containment, emits network events."""
+"""Simulation engine: advances the substation, runs scenarios and containment, emits network events."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -9,8 +9,19 @@ from sim.containment import Containment
 from sim.plant import Plant
 
 HEARTBEAT_EVERY_TICKS = 5
-PLCS = ("PLC-01", "PLC-02", "PLC-03")
+IEDS = ("IED-01", "IED-02", "IED-03")
 EVENT_LOG_CAP = 5000
+
+# register -> (destination IED, plant breaker name or None)
+REGISTERS: dict[str, tuple[str, str | None]] = {
+    "CB_MAIN": ("IED-01", "cb_main"),
+    "CB_PV": ("IED-02", "cb_pv"),
+    "CB_BESS": ("IED-02", "cb_bess"),
+    "CB_CRIT": ("IED-03", "cb_crit"),
+    "CB_NC": ("IED-03", "cb_nc"),
+    "BESS_MODE": ("IED-02", None),
+    "IMPORT_TARGET_KW": ("IED-01", None),
+}
 
 
 @dataclass
@@ -20,15 +31,15 @@ class StepResult:
 
 
 class SimulationEngine:
-    def __init__(self, seed: int = 42, disturbances: bool = True) -> None:
-        self.plant = Plant(seed, disturbances)
+    def __init__(self, seed: int = 42) -> None:
+        self.plant = Plant(seed)
         self.seq = 0
         self.active: str | None = None
         self._active_since_tick = 0
         self._pending: list[NetworkEvent] = []
         self.event_log: list[NetworkEvent] = []  # every event emitted (replay attacks copy from here)
         self.command_log: list[NetworkEvent] = []  # AUTHORISED write commands only (input for the digital twin)
-        self.suppress_heartbeat: set[str] = set()  # PLCs whose heartbeats are dropped (DoS)
+        self.suppress_heartbeat: set[str] = set()  # IEDs whose heartbeats are dropped (DoS)
         self.containment: Containment | None = None
         self.containment_log: list[dict] = []
 
@@ -53,17 +64,21 @@ class SimulationEngine:
         del self.event_log[:-EVENT_LOG_CAP]
         return e
 
-    def command(self, dst: str, register: str, value) -> None:
-        """An AUTHORISED command from SCADA: logged, and applied to the plant."""
-        e = self.emit("SCADA", dst, "WRITE_REG" if register.endswith("SPEED") else "WRITE_COIL", register, value, True)
+    def command(self, register: str, value) -> None:
+        """An AUTHORISED command from SCADA: logged, and applied to the substation."""
+        if register not in REGISTERS:
+            raise ValueError(f"unknown register {register}")
+        dst, breaker = REGISTERS[register]
+        code = "OPERATE" if breaker else "WRITE_SETPOINT"
+        e = self.emit("SCADA", dst, code, register, value, True)
         self.command_log.append(e)
         p = self.plant
-        if register == "PUMP1_SPEED":
-            p.set_pump_speed(float(value))
-        elif register == "VALVE1":
-            p.set_actuator("valve1", value in (True, "OPEN", 1))
-        else:
-            raise ValueError(f"unknown register {register}")
+        if breaker:
+            p.set_breaker(breaker, value in ("CLOSE", True, 1))
+        elif register == "BESS_MODE":
+            p.bess_mode = str(value)
+        elif register == "IMPORT_TARGET_KW":
+            p.import_target = float(value)
 
     # --- scenarios -----------------------------------------------------------------
     def start_scenario(self, name: str) -> None:
@@ -76,7 +91,7 @@ class SimulationEngine:
         scenarios.start(name, self)
 
     def stop_scenario(self) -> None:
-        """Hard reset: ends the scenario, repairs faults, restores the safe lineup."""
+        """Hard reset: ends the scenario, repairs faults, restores the normal lineup."""
         self.active = None
         self.suppress_heartbeat.clear()
         self.containment = None
@@ -112,9 +127,9 @@ class SimulationEngine:
             if self.containment.done:
                 self.containment = None
         if self.plant.tick % HEARTBEAT_EVERY_TICKS == 0:
-            for plc in PLCS:
-                if plc not in self.suppress_heartbeat:
-                    self.emit("SCADA", plc, "READ", "STATUS", "ok", True)
+            for ied in IEDS:
+                if ied not in self.suppress_heartbeat:
+                    self.emit("SCADA", ied, "READ", "STATUS", "ok", True)
         telemetry = self.plant.step(dt)
         events, self._pending = self._pending, []
         return StepResult(telemetry=telemetry, events=events)

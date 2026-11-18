@@ -1,26 +1,32 @@
 # ARMOUR LABS
 
-**AI-powered digital twin for industrial cyberattack detection, explanation and recovery.**
+**AI-powered digital twin for power-grid cyberattack detection, explanation and recovery.**
 
 > Detect the attack. Understand the impact. Contain the threat. Verify recovery.
 
-ARMOUR LABS is a cyber-physical security platform for Industrial Control Systems (ICS). It runs a software simulation of a small water-treatment plant and watches the network events, PLC commands, sensor telemetry and physical process together. A digital twin estimates how the plant *should* behave. ARMOUR LABS compares that expectation with what is observed, correlates the evidence across layers, and helps an operator understand, contain and recover from an incident.
+ARMOUR LABS protects a **campus microgrid substation**: a utility feed, solar array, battery storage, a hospital feeder and a campus feeder, all switched by protection relays (IEDs) that a SCADA system commands. It watches the network messages, breaker commands, meter readings and the physical power flows together. A digital twin estimates how the substation *should* behave given the commands that were actually authorised. ARMOUR LABS compares that expectation with what is observed, correlates the evidence across layers, and helps an operator understand, contain and recover from an incident.
 
-Unlike an intrusion-detection dashboard that only lists alerts, ARMOUR LABS connects a cyber event to its physical consequences.
+Unlike an intrusion-detection dashboard that only lists alerts, ARMOUR LABS connects a cyber event to its physical consequence: "someone opened the hospital's breaker" becomes "the hospital feeder is de-energised, the battery is absorbing the lost load, and the command did not come from SCADA".
 
-**Everything runs in simulation.** The plant, the network and every attack scenario exist only inside an isolated software simulation. Nothing connects to real PLCs, industrial networks or external systems.
+**Everything runs in simulation.** The substation, the network and every attack scenario exist only inside an isolated software simulation. Nothing connects to real relays, grids or external systems.
+
+## Why a microgrid substation
+
+- **High stakes people understand:** blackouts, and a hospital on the feeder. Real grid attacks (Ukraine 2015 and 2016) used exactly these techniques: unauthorised breaker commands and spoofed data.
+- **Clean twin signals:** frequency, voltage and power balance follow physical rules, so "expected vs observed" is meaningful.
+- **A look-alike problem worth solving:** a planned, authorised breaker opening and an attacker's opening have the same physical effect. Only the authorisation, checked against the command log, tells them apart.
 
 ## Project status
 
-This is the base project (v0.1): a working end-to-end skeleton that you can run today.
+This is the base project: a working end-to-end system you can run today.
 
 | Area | State |
 |---|---|
-| Plant simulator, 10 scenarios, staged containment, recovery verification, labelled dataset generator | Working |
+| Microgrid simulator, 11 scenarios, staged containment, recovery verification, labelled dataset generator | Working |
+| Model-based, independent digital twin (authorised command log as its only command input) | Working (v0: hand-set parameters, to be fitted and tuned) |
 | FastAPI backend with a WebSocket stream and an append-only SQLite event log | Working |
-| Live dashboard (isometric plant, controllers, twin chart, detector scores, network graph, incidents) | Working |
+| Live dashboard (isometric substation, relays, twin chart, detector scores, network graph, incidents) | Working |
 | Threshold baseline detector | Working (baseline only) |
-| Independent digital twin | Placeholder: returns fixed nominal values |
 | Incident classification (attack, fault, unknown) | Placeholder: always "unknown" |
 | ML detector (Isolation Forest), physics checks, evidence fusion, evaluation and `/metrics` | Not built yet |
 
@@ -88,17 +94,24 @@ npm install
 npm run dev
 ```
 
-Open **http://localhost:5173** in your browser. The status pill at the top right should read **Plant normal**, and the plant should be animating.
+Open **http://localhost:5173** in your browser. The status pill at the top right should read **Substation normal**, and power should be flowing through the animated substation.
 
 ### 5. Try the demo
 
-1. On the **Dashboard** tab, find the **Simulator** card on the plant view.
-2. Click **Unauthorised valve close**. Within a few seconds the status turns to **Incident in progress**, Valve 1 turns red, pressure jumps, flow collapses, and PLC-02 shows **Compromised**.
-3. Click **Approve containment**. The response runs in stages (block the source, enter a safe state, restore) and the process returns to normal.
-4. The incident is marked **Recovered** only after the plant has stayed within its limits for 10 seconds.
-5. Open the **Network** tab to see the red attacker path to PLC-02 and the message table, and the **Incidents** tab for the evidence list and progress.
+1. On the **Dashboard** tab, find the **Simulator** card on the substation view.
+2. Click **Unauthorised breaker trip**. Within a few seconds the status turns to **Incident in progress**: the hospital building greys out with a red outline, its breaker CB-CRIT opens, IED-03 shows **Compromised**, and the battery starts absorbing the lost load. The callout quotes the unauthorised command and its source.
+3. Click **Approve containment**. The response runs in stages (block the source, hold the battery, reclose the hospital breaker first, return to automatic control).
+4. The incident is marked **Recovered** only after frequency, voltage, import, battery charge and hospital load have stayed within limits with all breakers closed for 10 seconds.
+5. Open the **Network** tab to see the red attacker path to IED-03 and the message table, and the **Incidents** tab for the evidence list and progress.
 
-Try the other scenarios too: replay attack, denial of service, sensor drift, stuck valve, filter clogging, and the legitimate operator speed change, which must **not** be flagged as an attack. **Stop and reset** returns the plant to normal at any time.
+Then try the look-alikes, which show why the twin matters:
+- **Planned switching (legitimate)** opens the campus breaker with an *authorised* command. The physical effect resembles a trip, but no incident is raised.
+- **Passing clouds (natural)** drops solar output, which the weather station explains. No incident.
+- **Stuck breaker (fault)** is a legitimate open command that did not take effect: an incident is raised with no network evidence, pointing to equipment rather than an attacker.
+- **False frequency report** shows a spoofed 49.5 Hz reading making the controller drain the battery while the real grid is fine.
+- **Replay attack** keeps the meters looking normal while the hospital feeder is opened. The network evidence expires after 10 seconds, but the twin keeps flagging it through the breaker state and the battery's response.
+
+**Stop and reset** returns the substation to normal at any time.
 
 ### 6. Stop everything
 
@@ -110,7 +123,7 @@ Press `Ctrl+C` in each terminal.
 
 ```bash
 cd backend
-python -m pytest            # backend: 23 tests
+python -m pytest            # backend: 30 tests
 cd ../frontend
 npm run build               # frontend: type-check and production build
 ```
@@ -124,7 +137,7 @@ cd backend
 python -m sim.dataset --out ../data/generated
 ```
 
-This writes 24 simulator runs (normal and every scenario) as CSV plus network-event files and a `manifest.json`. The files are not committed because they are reproducible. See [data/README.md](data/README.md) for the labels and how to split them without leaking time windows.
+This writes 26 simulator runs (normal and every scenario) as CSV plus network-event files and a `manifest.json`. The files are not committed because they are reproducible. See [data/README.md](data/README.md) for the labels and how to split them without leaking time windows.
 
 ## Configuration
 
@@ -152,46 +165,51 @@ Example (macOS/Linux): `ARMOUR_TICK_SECONDS=0.5 uvicorn main:app --port 8000`
 | `Address already in use` on port 8000 or 5173 | Another program is using it. Stop it, or pick another port: `uvicorn main:app --port 8001` and `VITE_API_URL=http://localhost:8001` for the frontend. |
 | `ModuleNotFoundError` when starting the backend | Run `uvicorn` from inside the `backend/` folder with the virtual environment active. |
 | Frontend shows old data after a code change | Hard refresh the page (`Ctrl+Shift+R`). |
-| You started a scenario and the plant looks stuck | Click **Stop and reset**. |
+| You started a scenario and the substation looks stuck | Click **Stop and reset**. |
 
 ---
 
 ## How it works
 
 ```text
-Plant simulator ──► telemetry + network/command events
-                         │
-        ┌────────────────┴────────────────┐
-        ▼                                 ▼
- Detectors (baseline today;        Digital twin (expected state
- ML + physics checks planned)      from authorised commands only)
-        │                                 │
-        └──────────► evidence fusion ◄────┘
-                           │
-                           ▼
-        incident classification (attack / fault / unknown)
-                           │
-                           ▼
-   explanation → simulated containment → recovery verification
-                           │
-                           ▼
-              live dashboard + incident replay
+Substation simulator ──► meter readings + network/command events
+                              │
+             ┌────────────────┴────────────────┐
+             ▼                                 ▼
+   Detectors (baseline today;        Digital twin: expected state from
+   ML + physics checks planned)      the AUTHORISED command log only
+             │                                 │
+             └──────────► evidence fusion ◄────┘
+                                │
+                                ▼
+          incident classification (attack / fault / unknown)
+                                │
+                                ▼
+     explanation → simulated containment → recovery verification
+                                │
+                                ▼
+                   live dashboard + incident replay
 ```
+
+### The substation model
+
+Loads follow slow profiles (hospital about 400 kW, campus about 300 kW). Solar (500 kW rated) follows irradiance. A battery (250 kW, 200 kWh) is steered by an energy management system that holds utility import near a target and applies a frequency droop term that reads the **reported** frequency, so a spoofed measurement has a real physical effect. Grid-connected, the utility holds 50 Hz; islanded, any imbalance moves frequency and voltage.
 
 ### Scenarios
 
 | Scenario | Kind | What it does |
 |---|---|---|
-| Unauthorised valve close | attack | A non-SCADA source closes Valve 1: pressure rises, flow collapses |
-| False data injection | attack | A spoofed report biases the reported pressure |
-| Replay attack | attack | Recorded readings are replayed while Valve 1 is closed; old messages are re-sent |
-| Denial of service | attack | A message flood hits PLC-03, heartbeats drop, sensor updates go stale |
-| Small false data | attack | A small bias with no network trace (subtle) |
-| Slow-ramp false data | attack | A creeping bias with no network trace (looks like drift) |
-| Sensor drift | fault | The pressure sensor drifts, no malicious traffic |
-| Stuck valve | fault | Valve 1 sticks half open although commanded open |
-| Filter clogging | fault | Flow falls and pressure rises slowly |
-| Operator speed change | benign | An authorised SCADA command lowers Pump 1 to 85% |
+| Unauthorised breaker trip | attack | A non-SCADA source opens the hospital breaker |
+| False frequency report | attack | A spoofed 49.5 Hz makes the controller over-discharge the battery |
+| Replay attack | attack | Recorded readings are replayed while the hospital breaker is opened; old messages are re-sent |
+| Denial of service | attack | A message flood hits IED-03, heartbeats drop, measurements go stale |
+| Small false data | attack | A small voltage bias with no network trace (subtle) |
+| Slow-ramp false data | attack | A creeping voltage bias with no network trace (looks like drift) |
+| Voltage sensor drift | fault | The voltage sensor drifts, no malicious traffic |
+| Stuck breaker | fault | An authorised open command does not take effect |
+| PV inverter trip | fault | Solar output drops to zero, no network evidence |
+| Planned switching | benign | An authorised SCADA command opens the campus breaker |
+| Passing clouds | benign | Irradiance drops; the weather station explains it |
 
 Full contracts, endpoints and message shapes: [docs/contracts.md](docs/contracts.md).
 
@@ -209,10 +227,10 @@ Full contracts, endpoints and message shapes: [docs/contracts.md](docs/contracts
 ```text
 backend/
   core/contracts.py   shared data models (source of truth)
-  sim/                plant, scenarios, engine, containment, recovery, dataset generator
-  twin/               digital twin (placeholder)
+  sim/                substation model, scenarios, engine, containment, recovery, dataset generator
+  twin/               model-based digital twin
   detect/             detectors (threshold baseline)
-  incident/           incident manager (placeholder)
+  incident/           incident manager (placeholder classification)
   db/                 append-only SQLite event log
   api/                FastAPI app, WebSocket stream, runtime
   tests/              backend tests

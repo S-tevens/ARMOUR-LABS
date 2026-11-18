@@ -19,9 +19,9 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "incidents", label: "Incidents" },
 ];
 
-function Callout({ at, title, children, tone = "" }: { at: { left: string; top: string }; title: string; children: React.ReactNode; tone?: string }) {
+function Callout({ at, title, children, tone = "", below = false }: { at: { left: string; top: string }; title: string; children: React.ReactNode; tone?: string; below?: boolean }) {
   return (
-    <div className={`callout glass ${tone}`} style={at}>
+    <div className={`callout glass ${tone} ${below ? "below" : ""}`} style={at}>
       <b>{title}</b>
       <span>{children}</span>
     </div>
@@ -42,7 +42,7 @@ export default function App() {
   const incidents = Object.values(s.incidents).sort((a, b) => b.t_start - a.t_start);
   const active = incidents.find((i) => i.status !== "recovered" && i.status !== "unresolved");
   const state = !s.connected ? "offline" : active ? "incident" : "normal";
-  const stateText = { offline: "Backend offline", incident: "Incident in progress", normal: "Plant normal" }[state];
+  const stateText = { offline: "Backend offline", incident: "Incident in progress", normal: "Substation normal" }[state];
   const run = (fn: () => Promise<unknown>) => fn().then(() => setError(null)).catch((e) => setError(String(e)));
   const t = s.telemetry;
 
@@ -54,7 +54,7 @@ export default function App() {
             <path d="M15 2 L26 6 V15 C26 21 21 25.5 15 28 C9 25.5 4 21 4 15 V6 Z" fill="#2F6BFF" />
             <path d="M15 8 L20 17 H10 Z" fill="#fff" opacity="0.92" />
           </svg>
-          <span>Armour Labs<small>Water treatment simulation</small></span>
+          <span>Armour Labs<small>Microgrid substation simulation</small></span>
         </div>
         <nav className="tabs glass" aria-label="Views">
           {TABS.map((x) => (
@@ -73,28 +73,38 @@ export default function App() {
         <main className="dash">
           <section className="pagehead">
             <div className="page-title">
-              <h1>Water treatment plant</h1>
-              <span className="muted small">Simulated plant, running for {t ? Math.round(t.t) : 0} s</span>
+              <h1>Campus microgrid substation</h1>
+              <span className="muted small">Simulated substation, running for {t ? Math.round(t.t) : 0} s</span>
             </div>
             <SensorStrip history={s.history} twin={s.twin} />
           </section>
           <div className="stage">
             <ControllerRail t={t} twin={s.twin} />
-            <section className={`hero ${active ? "alarm" : ""}`} aria-label="Live plant">
+            <section className={`hero ${active ? "alarm" : ""}`} aria-label="Live substation">
               {t ? (
                 <div className="scene" style={{ transform: `scale(${zoom})` }}>
                   <IsoPlant t={t} incident={active} />
-                  <Callout at={pct(0, 0, 150)} title="Tank 1">{t.tank1_level.toFixed(1)}% full</Callout>
-                  <Callout at={pct(5, -3.4, 150)} title="Tank 2">{t.tank2_level.toFixed(1)}% full</Callout>
-                  <Callout at={pct(5, 0, 70)} title="Line pressure" tone={t.pressure > 3.5 ? "bad" : ""}>{t.pressure.toFixed(2)} bar</Callout>
-                  <Callout at={pct(5, -1.5, 86)} title={`Valve 1 ${t.valve1 ? "open" : "closed"}`} tone={t.valve1 ? "" : "bad"}>
-                    {t.valve1 ? "PLC-02 normal" : active?.evidence.find((e) => e.type === "unauthorised_event")?.text ?? "Closed outside the schedule"}
+                  <Callout at={pct(0.2, 0, 58)} title="Utility" tone={t.cb_main && Math.abs(t.frequency - 50) <= 0.2 ? "" : "bad"}>
+                    {!t.cb_main ? "Disconnected" : t.grid_import_kw >= 0 ? `Importing ${t.grid_import_kw.toFixed(0)} kW` : `Exporting ${(-t.grid_import_kw).toFixed(0)} kW`}
+                    {`, ${t.frequency.toFixed(2)} Hz`}
+                  </Callout>
+                  <Callout at={pct(3, -3.4, 46)} title="Solar" tone={t.cb_pv && t.pv_kw > 5 ? "" : "bad"}>
+                    {t.cb_pv && t.pv_kw > 5 ? `${t.pv_kw.toFixed(0)} kW` : "Offline"}
+                  </Callout>
+                  <Callout at={pct(5.6, -3.3, 62)} title={`Battery ${t.bess_soc.toFixed(0)}%`}>
+                    {Math.abs(t.bess_kw) < 5 ? "Idle" : t.bess_kw > 0 ? `Discharging ${t.bess_kw.toFixed(0)} kW` : `Charging ${(-t.bess_kw).toFixed(0)} kW`}
+                  </Callout>
+                  <Callout below at={pct(3.7, 4.1, 0)} title={t.cb_crit ? "Hospital feeder" : "Hospital feeder de-energised"} tone={t.cb_crit ? "" : "bad"}>
+                    {t.cb_crit ? `${t.load_critical_kw.toFixed(0)} kW` : active?.evidence.find((e) => e.type === "unauthorised_event")?.text ?? "Opened outside the command log"}
+                  </Callout>
+                  <Callout below at={pct(7.7, 4.2, 0)} title={t.cb_nc ? "Campus feeder" : "Campus feeder open"} tone={t.cb_nc ? "" : "bad"}>
+                    {t.cb_nc ? `${t.load_noncritical_kw.toFixed(0)} kW` : "Breaker open"}
                   </Callout>
                 </div>
               ) : (
-                <p className="empty hero-empty">Waiting for plant telemetry…</p>
+                <p className="empty hero-empty">Waiting for substation telemetry…</p>
               )}
-              <div className="zoom glass" role="group" aria-label="Zoom plant view">
+              <div className="zoom glass" role="group" aria-label="Zoom substation view">
                 <button aria-label="Zoom in" onClick={() => setZoom((z) => Math.min(1.8, +(z + 0.2).toFixed(1)))}>+</button>
                 <button aria-label="Zoom out" onClick={() => setZoom((z) => Math.max(0.8, +(z - 0.2).toFixed(1)))}>&minus;</button>
                 <button aria-label="Reset zoom" onClick={() => setZoom(1)}>

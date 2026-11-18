@@ -1,14 +1,20 @@
-"""Deterministic water-treatment plant model (owner: P2).
+"""Campus microgrid substation model (owner: P2). Deterministic and seeded.
 
-Flow: raw water -> Tank 1 -> Pump 1 -> Filter -> Valve 1 -> Tank 2 -> Pump 2 -> clean water.
+                 UTILITY ──[CB-MAIN]──┬────────── bus ──────────┬──────────┐
+                                      │                         │          │
+                            [CB-PV]──PV array        [CB-BESS]──Battery    │
+                                                                           ├─[CB-CRIT]── Hospital (critical load)
+                                                                           └─[CB-NC]──── Campus (non-critical load)
 
 Process rules (simplified, understandable):
-- Flow through the line = pump output x filter factor x valve factor. A closed valve leaves a small bypass flow.
-- Pressure rises when the valve restricts flow (pump pushing against it) and when the filter clogs.
-- Pump speed scales flow linearly and pressure with the square of speed.
-- Tank levels follow inflow minus outflow, with simple level regulation on the raw inlet and the Pump 2 outlet.
-- Tank 2 sees a slow sinusoidal demand disturbance.
-- Sensors add seeded noise. Sensor faults/attacks (bias, replay, stale updates) change what is REPORTED only.
+- Loads follow slow daily-like profiles and are only served while their breaker is closed.
+- PV output = rated power x irradiance, and drops to zero if the inverter trips or CB-PV opens.
+- The energy management system (EMS) steers the battery to hold grid import at a target, with a
+  state-of-charge correction and a frequency droop term that reads the REPORTED frequency.
+- Grid-connected: the utility holds frequency at 50 Hz and import = load - PV - battery.
+- Islanded (CB-MAIN open): the battery forms the grid; any imbalance moves frequency and voltage.
+- Sensor faults and attacks (bias, replay, stale updates) change what is REPORTED only. The EMS reads the
+  reported frequency, so a spoofed frequency has a real physical consequence.
 """
 from __future__ import annotations
 
@@ -17,68 +23,77 @@ from collections import deque
 
 import numpy as np
 
-from core.contracts import PlcStatus, Telemetry
+from core.contracts import IedStatus, Telemetry
 
-RAW_INFLOW_LPM = 110.0  # raw water into Tank 1
-NOMINAL_FLOW_LPM = 110.0
-NOMINAL_PRESSURE_BAR = 2.1
-BLOCKED_PRESSURE_BAR = 4.8  # pump pushing against a closed valve
-BLOCKED_FLOW_LPM = 12.0
-BLOCKED_RATIO = BLOCKED_FLOW_LPM / NOMINAL_FLOW_LPM
-TANK_CAPACITY_L = 600.0
-LAG = 0.35  # first-order response per second
-LEVEL_GAIN_LPM_PER_PCT = 8.0  # inlet/outlet throttle as levels drift from the setpoint
-TANK1_SETPOINT = 62.0
-TANK2_SETPOINT = 48.0
-CLOG_FLOW_LOSS = 0.45  # fully clogged filter cuts pump output by this fraction
-CLOG_PRESSURE_RISE = 0.8  # and raises pressure by this fraction
-DEMAND_PERIOD_S = 300.0
+F_NOM = 50.0
+V_NOM = 1.0
+PV_RATED_KW = 500.0
+BESS_PMAX_KW = 250.0
+BESS_CAP_KWH = 200.0
+BESS_LAG = 0.4
+SOC_TARGET = 60.0
+SOC_GAIN_KW_PER_PCT = 10.0
+IMPORT_TARGET_KW = 320.0
+DROOP_KW_PER_HZ = 800.0
+DROOP_DEADBAND_HZ = 0.1
+LOAD_CRIT_BASE, LOAD_CRIT_AMP = 400.0, 30.0
+LOAD_NC_BASE, LOAD_NC_AMP, LOAD_NC_PHASE = 300.0, 40.0, 1.0
+LOAD_PERIOD_S = 600.0
+IRR_BASE, IRR_AMP, IRR_PERIOD_S = 750.0, 150.0, 900.0  # W/m2
+CLOUD_LAG = 0.1
+BREAKERS = ("cb_main", "cb_pv", "cb_bess", "cb_crit", "cb_nc")
+# Measurements an attacker can record and replay.
+REPLAY_FIELDS = ("frequency", "bus_voltage", "grid_import_kw", "load_critical_kw", "load_noncritical_kw")
 
 
 class Plant:
-    def __init__(self, seed: int = 42, disturbances: bool = True) -> None:
+    def __init__(self, seed: int = 42) -> None:
         self.seed = seed
         self.rng = np.random.default_rng(seed)
         self.t = 0.0
         self.tick = 0
-        # true process state
-        self.tank1 = TANK1_SETPOINT
-        self.tank2 = TANK2_SETPOINT
-        self.pressure = NOMINAL_PRESSURE_BAR
-        self.flow = NOMINAL_FLOW_LPM
-        self.temperature = 27.0
-        # actuators (True = running / open)
-        self.pump1 = True
-        self.pump2 = True
-        self.valve1 = True
-        self.pump1_speed = 1.0  # 0..1 setpoint
-        # physical faults
-        self.valve_stuck: float | None = None  # opening fraction the valve is stuck at (ignores commands)
-        self.filter_clog = 0.0  # 0..1
-        self.clog_rate = 0.0  # added per second
-        # process disturbance
-        self.demand_amp = 4.0 if disturbances else 0.0  # L/min swing on the Pump 2 outlet
-        # sensor faults / spoofing: change what sensors REPORT (process untouched)
-        self.sensor_bias: dict[str, float] = {"pressure": 0.0, "flow": 0.0, "tank1_level": 0.0}
-        self.stale_prob = 0.0  # chance a tick repeats the previous sensor report (missed update)
-        self.replay: dict | None = None  # recorded readings being replayed instead of live ones
-        self.plc_status: dict[str, str] = {"plc01": "normal", "plc02": "normal", "plc03": "normal"}
+        # switchgear and set-points
+        self.breakers: dict[str, bool] = {b: True for b in BREAKERS}  # True = closed
+        self.stuck: set[str] = set()  # breakers that ignore commands (mechanical fault)
+        self.import_target = IMPORT_TARGET_KW
+        self.bess_mode = "AUTO"  # AUTO | HOLD
+        # physical state
+        self.freq = F_NOM
+        self.volt = V_NOM
+        self.grid_import = 320.0
+        self.bess_kw = 0.0
+        self.soc = SOC_TARGET
+        self.pv = 0.0
+        self.load_crit = LOAD_CRIT_BASE
+        self.load_nc = LOAD_NC_BASE
+        self.irradiance = IRR_BASE
+        self.cloud = 1.0
+        self.cloud_target = 1.0
+        self.pv_inverter_ok = True
+        # sensor faults / spoofing: change what is REPORTED (process untouched)
+        self.sensor_bias: dict[str, float] = {"frequency": 0.0, "bus_voltage": 0.0, "grid_import_kw": 0.0}
+        self.stale_prob = 0.0
+        self.replay: dict | None = None
+        self.ied_status: dict[str, str] = {"ied01": "normal", "ied02": "normal", "ied03": "normal"}
         self._obs_hist: deque[dict[str, float]] = deque(maxlen=60)
         self._last_vals: dict[str, float] | None = None
 
     # --- control -----------------------------------------------------------------
-    def set_actuator(self, name: str, value: bool) -> None:
-        if name not in ("pump1", "pump2", "valve1"):
-            raise ValueError(f"unknown actuator {name}")
-        setattr(self, name, bool(value))
-
-    def set_pump_speed(self, speed: float) -> None:
-        self.pump1_speed = float(np.clip(speed, 0.0, 1.0))
+    def set_breaker(self, name: str, closed: bool) -> None:
+        if name not in BREAKERS:
+            raise ValueError(f"unknown breaker {name}")
+        if name in self.stuck:
+            return  # mechanism is stuck: the command has no effect
+        self.breakers[name] = bool(closed)
 
     def start_replay(self, window: int = 30) -> None:
-        """Start reporting previously recorded pressure/flow readings instead of live ones."""
-        hist = list(self._obs_hist)[-window:] or [{"pressure": 2.1, "flow": 110.0}]  # nominal if nothing recorded
-        self.replay = {"pressure": [h["pressure"] for h in hist], "flow": [h["flow"] for h in hist], "i": 0}
+        """Report previously recorded readings instead of live ones."""
+        hist = list(self._obs_hist)[-window:] or [
+            {"frequency": F_NOM, "bus_voltage": V_NOM, "grid_import_kw": 320.0,
+             "load_critical_kw": LOAD_CRIT_BASE, "load_noncritical_kw": LOAD_NC_BASE}
+        ]
+        self.replay = {f: [h[f] for h in hist] for f in REPLAY_FIELDS}
+        self.replay["i"] = 0
 
     def clear_sensor_faults(self) -> None:
         self.sensor_bias = {k: 0.0 for k in self.sensor_bias}
@@ -86,47 +101,60 @@ class Plant:
         self.replay = None
 
     def reset_to_safe(self) -> None:
-        """Hard reset: normal actuator lineup, faults repaired, sensors clean."""
-        self.pump1 = self.pump2 = self.valve1 = True
-        self.pump1_speed = 1.0
-        self.valve_stuck = None
-        self.filter_clog = 0.0
-        self.clog_rate = 0.0
+        """Hard reset: normal switching lineup, faults repaired, sensors clean."""
+        self.breakers = {b: True for b in BREAKERS}
+        self.stuck.clear()
+        self.import_target = IMPORT_TARGET_KW
+        self.bess_mode = "AUTO"
+        self.cloud_target = 1.0
+        self.pv_inverter_ok = True
         self.clear_sensor_faults()
-        self.plc_status = {"plc01": "normal", "plc02": "normal", "plc03": "normal"}
-
-    @property
-    def valve_open_fraction(self) -> float:
-        if self.valve_stuck is not None:
-            return self.valve_stuck
-        return 1.0 if self.valve1 else 0.0
+        self.ied_status = {"ied01": "normal", "ied02": "normal", "ied03": "normal"}
 
     # --- dynamics ------------------------------------------------------------------
     def step(self, dt: float = 1.0) -> Telemetry:
-        self.filter_clog = float(np.clip(self.filter_clog + self.clog_rate * dt, 0.0, 1.0))
-        speed = self.pump1_speed
-        if self.pump1:
-            open_frac = self.valve_open_fraction
-            pump_flow = NOMINAL_FLOW_LPM * speed * (1.0 - CLOG_FLOW_LOSS * self.filter_clog)
-            target_flow = pump_flow * (BLOCKED_RATIO + (1.0 - BLOCKED_RATIO) * open_frac)
-            p_open = NOMINAL_PRESSURE_BAR * speed**2 * (1.0 + CLOG_PRESSURE_RISE * self.filter_clog)
-            p_block = BLOCKED_PRESSURE_BAR * speed**2
-            target_p = p_open + (p_block - p_open) * (1.0 - open_frac)
-        else:
-            target_flow, target_p = 0.0, 0.0
-        self.flow += (target_flow - self.flow) * LAG
-        self.pressure += (target_p - self.pressure) * LAG
+        b = self.breakers
+        t = self.t
+        irr_clear = IRR_BASE + IRR_AMP * math.sin(2.0 * math.pi * t / IRR_PERIOD_S)
+        self.cloud += (self.cloud_target - self.cloud) * CLOUD_LAG
+        self.irradiance = irr_clear * self.cloud
+        self.pv = PV_RATED_KW * self.irradiance / 1000.0 if (b["cb_pv"] and self.pv_inverter_ok) else 0.0
+        phase = 2.0 * math.pi * t / LOAD_PERIOD_S
+        self.load_crit = LOAD_CRIT_BASE + LOAD_CRIT_AMP * math.sin(phase) if b["cb_crit"] else 0.0
+        self.load_nc = LOAD_NC_BASE + LOAD_NC_AMP * math.sin(phase + LOAD_NC_PHASE) if b["cb_nc"] else 0.0
+        load = self.load_crit + self.load_nc
 
-        # Raw inlet and Pump 2 outlet throttle with level, so levels recover after an upset.
-        inflow = max(0.0, RAW_INFLOW_LPM + LEVEL_GAIN_LPM_PER_PCT * (TANK1_SETPOINT - self.tank1))
-        out2 = 0.0
-        if self.pump2 and self.tank2 > 2.0:
-            demand = self.demand_amp * math.sin(2.0 * math.pi * self.t / DEMAND_PERIOD_S)
-            out2 = max(0.0, NOMINAL_FLOW_LPM + demand + LEVEL_GAIN_LPM_PER_PCT * (self.tank2 - TANK2_SETPOINT))
-        self.tank1 += (inflow - self.flow) / 60.0 / TANK_CAPACITY_L * 100.0 * dt
-        self.tank2 += (self.flow - out2) / 60.0 / TANK_CAPACITY_L * 100.0 * dt
-        self.tank1 = float(np.clip(self.tank1, 0.0, 100.0))
-        self.tank2 = float(np.clip(self.tank2, 0.0, 100.0))
+        # energy management system: reads the REPORTED frequency
+        f_reported = self.freq + self.sensor_bias["frequency"]
+        if b["cb_main"]:
+            target = self.import_target + SOC_GAIN_KW_PER_PCT * (SOC_TARGET - self.soc)
+            dev = F_NOM - f_reported
+            droop = 0.0 if abs(dev) < DROOP_DEADBAND_HZ else DROOP_KW_PER_HZ * dev
+            want = load - self.pv - target + droop
+        else:
+            want = load - self.pv  # islanded: the battery forms the grid
+        if not b["cb_bess"] or self.bess_mode != "AUTO":
+            want = 0.0
+        want = float(np.clip(want, -BESS_PMAX_KW, BESS_PMAX_KW))
+        if self.soc <= 10.0:
+            want = min(want, 0.0)
+        if self.soc >= 95.0:
+            want = max(want, 0.0)
+        self.bess_kw += (want - self.bess_kw) * BESS_LAG
+        if not b["cb_bess"]:
+            self.bess_kw = 0.0
+        self.soc = float(np.clip(self.soc - self.bess_kw * dt / (BESS_CAP_KWH * 3600.0) * 100.0, 0.0, 100.0))
+
+        if b["cb_main"]:
+            self.grid_import = load - self.pv - self.bess_kw
+            self.freq = F_NOM  # the utility holds the frequency
+            self.volt = V_NOM - 0.00003 * (self.grid_import - 300.0)
+        else:
+            self.grid_import = 0.0
+            imbalance = self.pv + self.bess_kw - load
+            f_target = float(np.clip(F_NOM + 2.0 * imbalance / 1000.0, 47.0, 52.0))
+            self.freq += (f_target - self.freq) * 0.3
+            self.volt += ((V_NOM + 0.03 * imbalance / 1000.0) - self.volt) * 0.3
 
         self.t += dt
         self.tick += 1
@@ -136,56 +164,65 @@ class Plant:
         return (
             self.replay is None
             and self.stale_prob == 0.0
-            and self.valve_open_fraction == 1.0
-            and self.pump1_speed >= 0.95
-            and self.filter_clog < 0.05
-            and all(abs(b) < 1e-9 for b in self.sensor_bias.values())
+            and all(self.breakers.values())
+            and not self.stuck
+            and self.pv_inverter_ok
+            and abs(self.cloud - 1.0) < 0.05
+            and self.bess_mode == "AUTO"
+            and self.import_target == IMPORT_TARGET_KW
+            and all(abs(v) < 1e-9 for v in self.sensor_bias.values())
         )
 
     def true_state(self) -> dict[str, float | bool]:
         """Ground truth (for tests and evaluation only; detectors must not read this)."""
         return {
-            "tank1_level": self.tank1,
-            "tank2_level": self.tank2,
-            "pressure": self.pressure,
-            "flow": self.flow,
-            "temperature": self.temperature,
-            "pump1": self.pump1,
-            "pump2": self.pump2,
-            "valve1": self.valve1,
-            "pump1_speed": self.pump1_speed,
-            "valve_open_fraction": self.valve_open_fraction,
-            "filter_clog": self.filter_clog,
+            "frequency": self.freq,
+            "bus_voltage": self.volt,
+            "grid_import_kw": self.grid_import,
+            "pv_kw": self.pv,
+            "bess_kw": self.bess_kw,
+            "bess_soc": self.soc,
+            "load_critical_kw": self.load_crit,
+            "load_noncritical_kw": self.load_nc,
+            "irradiance": self.irradiance,
+            **dict(self.breakers),
         }
 
     def observe(self) -> Telemetry:
         n = self.rng.normal
-        b = self.sensor_bias
+        bias = self.sensor_bias
         vals = {
-            "tank1_level": self.tank1 + n(0, 0.05) + b["tank1_level"],
-            "tank2_level": self.tank2 + n(0, 0.05),
-            "pressure": self.pressure + n(0, 0.03) + b["pressure"],
-            "flow": self.flow + n(0, 1.0) + b["flow"],
-            "temperature": self.temperature + n(0, 0.05),
+            "frequency": self.freq + n(0, 0.01) + bias["frequency"],
+            "bus_voltage": self.volt + n(0, 0.002) + bias["bus_voltage"],
+            "grid_import_kw": self.grid_import + n(0, 3.0) + bias["grid_import_kw"],
+            "pv_kw": self.pv + n(0, 3.0),
+            "bess_kw": self.bess_kw + n(0, 2.0),
+            "bess_soc": self.soc + n(0, 0.05),
+            "load_critical_kw": self.load_crit + n(0, 2.0),
+            "load_noncritical_kw": self.load_nc + n(0, 2.0),
+            "irradiance": self.irradiance + n(0, 5.0),
         }
-        vals = {k: round(float(v), 3) for k, v in vals.items()}
+        vals = {k: round(float(v), 4 if k == "bus_voltage" else 3) for k, v in vals.items()}
         if self.replay is not None:
             r = self.replay
-            i = r["i"] % len(r["pressure"])
-            vals["pressure"], vals["flow"] = r["pressure"][i], r["flow"][i]
+            i = r["i"] % len(r["frequency"])
+            for f in REPLAY_FIELDS:
+                vals[f] = r[f][i]
             r["i"] += 1
         elif self.stale_prob > 0 and self._last_vals is not None and self.rng.random() < self.stale_prob:
-            vals = dict(self._last_vals)  # missed update: sensors repeat their previous report
+            vals = dict(self._last_vals)  # missed update: measurements repeat the previous report
         if self._is_nominal():
-            # An attacker can only record what the plant reported while it was running normally.
-            self._obs_hist.append({"pressure": vals["pressure"], "flow": vals["flow"]})
+            # An attacker can only record what the substation reported while it was running normally.
+            self._obs_hist.append({f: vals[f] for f in REPLAY_FIELDS})
         self._last_vals = vals
         return Telemetry(
             t=self.t,
             tick=self.tick,
-            pump1=self.pump1,
-            pump2=self.pump2,
-            valve1=self.valve1,  # reported commanded state, even if the valve is physically stuck
-            plc_status=PlcStatus(**self.plc_status),
+            cb_main=self.breakers["cb_main"],
+            cb_pv=self.breakers["cb_pv"],
+            cb_bess=self.breakers["cb_bess"],
+            cb_crit=self.breakers["cb_crit"],
+            cb_nc=self.breakers["cb_nc"],
+            ied_status=IedStatus(**self.ied_status),
             **vals,
         )

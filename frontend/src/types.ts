@@ -1,19 +1,26 @@
 // Mirrors backend/core/contracts.py and docs/contracts.md. Change all three together.
 
-export type PlcState = "normal" | "suspicious" | "compromised";
+export type IedState = "normal" | "suspicious" | "compromised";
 
+/** Campus microgrid substation snapshot, 1 Hz. grid_import_kw: + import, - export. bess_kw: + discharge, - charge. Breakers: true = closed. */
 export interface Telemetry {
   t: number;
   tick: number;
-  tank1_level: number;
-  tank2_level: number;
-  pressure: number;
-  flow: number;
-  temperature: number;
-  pump1: boolean; // true = running
-  pump2: boolean;
-  valve1: boolean; // true = open
-  plc_status: { plc01: PlcState; plc02: PlcState; plc03: PlcState };
+  frequency: number; // Hz
+  bus_voltage: number; // per unit
+  grid_import_kw: number;
+  pv_kw: number;
+  bess_kw: number;
+  bess_soc: number; // percent
+  load_critical_kw: number; // hospital feeder
+  load_noncritical_kw: number; // campus feeder
+  irradiance: number; // W/m2
+  cb_main: boolean;
+  cb_pv: boolean;
+  cb_bess: boolean;
+  cb_crit: boolean;
+  cb_nc: boolean;
+  ied_status: { ied01: IedState; ied02: IedState; ied03: IedState };
 }
 
 export interface NetworkEvent {

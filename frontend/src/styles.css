@@ -90,13 +90,14 @@ h2 { margin: 0; font-size: 15px; font-weight: 500; }
 .chips button.on { background: #fff; color: var(--ink); box-shadow: 0 4px 10px -6px rgba(52, 78, 140, 0.4); }
 .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; }
 .dot.green { background: var(--green); } .dot.red { background: var(--red); }
-.plc { background: rgba(255, 255, 255, 0.72); border: 1px solid var(--frost-edge); border-radius: var(--r-md); overflow: hidden; }
-.plc.compromised { border-color: rgba(229, 72, 77, 0.5); box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.08); }
-.plc.suspicious { border-color: rgba(240, 160, 48, 0.55); }
-.plc-head { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; padding: 11px 12px; cursor: pointer; font: inherit; color: var(--ink); text-align: left; }
-.plc-icon { display: inline-flex; width: 32px; height: 32px; align-items: center; justify-content: center; border-radius: 9px; background: #eef1f6; color: var(--slate); flex: none; }
-.plc-name { flex: 1; display: flex; flex-direction: column; gap: 1px; font-size: 13px; }
-.plc-name b { font-weight: 500; }
+.ied { background: rgba(255, 255, 255, 0.72); border: 1px solid var(--frost-edge); border-radius: var(--r-md); overflow: hidden; }
+.ied.compromised { border-color: rgba(229, 72, 77, 0.5); box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.08); }
+.ied.suspicious { border-color: rgba(240, 160, 48, 0.55); }
+.ied-head { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; padding: 11px 12px; cursor: pointer; font: inherit; color: var(--ink); text-align: left; }
+.ied-icon { display: inline-flex; width: 32px; height: 32px; align-items: center; justify-content: center; border-radius: 9px; background: #eef1f6; color: var(--slate); flex: none; }
+.ied-name { flex: 1; display: flex; flex-direction: column; gap: 1px; font-size: 13px; }
+.ied-name b { font-weight: 500; }
+.ied-name .role { font-size: 12px; color: var(--slate); }
 .state-line { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--green); }
 .state-line i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .state-line.suspicious { color: #c98310; } .state-line.compromised { color: var(--red); }
@@ -109,7 +110,7 @@ table.mini tr + tr td { border-top: 1px solid rgba(120, 140, 185, 0.12); }
 .hero { position: relative; border-radius: var(--r-lg); min-height: 480px; overflow: hidden; display: flex; align-items: center; }
 .hero::before { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 60% at 50% 55%, rgba(255, 255, 255, 0.75), transparent 75%); pointer-events: none; transition: background 0.6s; }
 .hero.alarm::before { background: radial-gradient(70% 60% at 62% 55%, rgba(229, 72, 77, 0.14), transparent 75%); }
-.scene { position: relative; width: 100%; max-width: 1000px; margin: 0 auto; aspect-ratio: 820 / 430; transition: transform 0.25s ease; transform-origin: 50% 50%; }
+.scene { position: relative; width: 100%; max-width: 1000px; margin: 0 auto; aspect-ratio: 800 / 490; transition: transform 0.25s ease; transform-origin: 50% 50%; }
 .iso { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .node { fill: #fff; stroke-width: 2; } .node.ok { stroke: var(--green); } .node.bad { stroke: var(--red); }
 .zoom { position: absolute; left: 14px; top: 44%; display: flex; flex-direction: column; padding: 4px; border-radius: 14px; z-index: 2; }
@@ -119,11 +120,15 @@ table.mini tr + tr td { border-top: 1px solid rgba(120, 140, 185, 0.12); }
 .pipe-base { fill: none; stroke: #dde4f1; stroke-width: 9; stroke-linecap: round; stroke-linejoin: round; }
 .pipe-flow { fill: none; stroke: var(--blue); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 3 14; animation: flow linear infinite; }
 .pipe-flow.blocked { stroke: var(--red); }
+.pipe-flow.rev { animation-direction: reverse; }
+.pipe-base.off { stroke: #eceff6; stroke-dasharray: 3 6; }
+.floor-line { fill: none; stroke: rgba(120, 140, 185, 0.16); stroke-width: 1; }
 @keyframes flow { to { stroke-dashoffset: -17; } }
 @keyframes pulse { 50% { opacity: 0.35; } }
 .led.alarm { animation: pulse 1s infinite; }
 
 .callout { position: absolute; transform: translate(-50%, -100%); display: flex; flex-direction: column; gap: 1px; padding: 8px 12px; border-radius: var(--r-md); font-size: 12px; width: max-content; max-width: 250px; }
+.callout.below { transform: translate(-50%, 8px); }
 .callout b { font-size: 13px; font-weight: 600; }
 .callout span { color: var(--slate); font-variant-numeric: tabular-nums; white-space: normal; }
 .callout.bad { border-color: rgba(229, 72, 77, 0.5); }

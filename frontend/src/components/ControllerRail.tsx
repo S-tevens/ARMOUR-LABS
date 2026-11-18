@@ -1,23 +1,34 @@
 import { useState } from "react";
-import type { PlcState, Telemetry, TwinState } from "../types";
+import type { IedState, Telemetry, TwinState } from "../types";
 
-type Key = "plc01" | "plc02" | "plc03";
+type Key = "ied01" | "ied02" | "ied03";
 interface Row { name: string; reading: string; ok: boolean; pill: string }
 
-const LABEL: Record<PlcState, string> = { normal: "Normal", suspicious: "Suspicious", compromised: "Compromised" };
+const LABEL: Record<IedState, string> = { normal: "Normal", suspicious: "Suspicious", compromised: "Compromised" };
+const kw = (v: number) => `${v.toFixed(0)} kW`;
+const closed = (b: boolean): Pick<Row, "reading" | "ok" | "pill"> => ({ reading: b ? "Closed" : "Open", ok: b, pill: b ? "Closed" : "Open" });
 
 function buildRows(t: Telemetry, twin: TwinState | null): Record<Key, Row[]> {
   const off = (k: string) => (twin ? Math.abs(twin.norm_residual[k] ?? 0) > 4 : false);
+  const meter = (name: string, key: string, reading: string): Row => ({ name, reading, ok: !off(key), pill: off(key) ? "Off twin" : "In range" });
   return {
-    plc01: [
-      { name: "Pump 1", reading: t.pump1 ? "Running" : "Stopped", ok: t.pump1, pill: t.pump1 ? "Running" : "Stopped" },
-      { name: "Pump 2", reading: t.pump2 ? "Running" : "Stopped", ok: t.pump2, pill: t.pump2 ? "Running" : "Stopped" },
+    ied01: [
+      { name: "Main breaker", ...closed(t.cb_main) },
+      meter("Frequency", "frequency", `${t.frequency.toFixed(2)} Hz`),
+      meter("Bus voltage", "bus_voltage", `${t.bus_voltage.toFixed(3)} pu`),
+      meter("Utility import", "grid_import_kw", kw(t.grid_import_kw)),
     ],
-    plc02: [{ name: "Valve 1", reading: t.valve1 ? "Open" : "Closed", ok: t.valve1, pill: t.valve1 ? "Open" : "Closed" }],
-    plc03: [
-      { name: "Pressure", reading: `${t.pressure.toFixed(2)} bar`, ok: !off("pressure"), pill: off("pressure") ? "Off twin" : "In range" },
-      { name: "Flow", reading: `${t.flow.toFixed(0)} L/min`, ok: !off("flow"), pill: off("flow") ? "Off twin" : "In range" },
-      { name: "Temperature", reading: `${t.temperature.toFixed(1)} °C`, ok: !off("temperature"), pill: off("temperature") ? "Off twin" : "In range" },
+    ied02: [
+      { name: "PV breaker", ...closed(t.cb_pv) },
+      meter("PV output", "pv_kw", kw(t.pv_kw)),
+      { name: "Battery breaker", ...closed(t.cb_bess) },
+      meter("Battery power", "bess_kw", `${t.bess_kw >= 0 ? "+" : ""}${t.bess_kw.toFixed(0)} kW`),
+    ],
+    ied03: [
+      { name: "Hospital breaker", ...closed(t.cb_crit) },
+      meter("Hospital load", "load_critical_kw", kw(t.load_critical_kw)),
+      { name: "Campus breaker", ...closed(t.cb_nc) },
+      meter("Campus load", "load_noncritical_kw", kw(t.load_noncritical_kw)),
     ],
   };
 }
@@ -28,45 +39,48 @@ const Chevron = ({ open }: { open: boolean }) => (
   </svg>
 );
 
-const ChipIcon = () => (
+const RelayIcon = () => (
   <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true">
-    <rect x="4" y="4" width="12" height="12" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
-    <path d="M8 1.5v2.5M12 1.5v2.5M8 16v2.5M12 16v2.5M1.5 8h2.5M1.5 12h2.5M16 8h2.5M16 12h2.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    <rect x="3.5" y="3.5" width="13" height="13" rx="3" fill="none" stroke="currentColor" strokeWidth="1.5" />
+    <path d="M6.5 11.5 9 8l1.8 2.6L13.5 7" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
   </svg>
 );
 
+const IEDS: { key: Key; id: string; role: string }[] = [
+  { key: "ied01", id: "IED-01", role: "Utility interface" },
+  { key: "ied02", id: "IED-02", role: "Solar and battery" },
+  { key: "ied03", id: "IED-03", role: "Load feeders" },
+];
+
 export default function ControllerRail({ t, twin }: { t: Telemetry | null; twin: TwinState | null }) {
   const [filter, setFilter] = useState<"all" | "normal" | "attention">("all");
-  const [open, setOpen] = useState<Record<string, boolean>>({ plc01: true, plc02: true, plc03: true });
+  const [open, setOpen] = useState<Record<string, boolean>>({ ied01: false, ied02: false, ied03: true });
   const rows = t ? buildRows(t, twin) : null;
-  const ids: { key: Key; id: string }[] = [
-    { key: "plc01", id: "PLC-01" },
-    { key: "plc02", id: "PLC-02" },
-    { key: "plc03", id: "PLC-03" },
-  ];
-  const attention = (k: Key) => !!t && !!rows && (t.plc_status[k] !== "normal" || rows[k].some((r) => !r.ok));
-  const counts = { all: ids.length, normal: ids.filter((x) => !attention(x.key)).length, attention: ids.filter((x) => attention(x.key)).length };
-  const shown = ids.filter((x) => filter === "all" || (filter === "attention") === attention(x.key));
+  const attention = (k: Key) => !!t && !!rows && (t.ied_status[k] !== "normal" || rows[k].some((r) => !r.ok));
+  const counts = { normal: IEDS.filter((x) => !attention(x.key)).length, attention: IEDS.filter((x) => attention(x.key)).length };
+  const shown = IEDS.filter((x) => filter === "all" || (filter === "attention") === attention(x.key));
 
   return (
-    <aside className="rail glass" aria-label="Controllers">
-      <h2>Controllers</h2>
-      <div className="chips" role="tablist" aria-label="Filter controllers">
+    <aside className="rail glass" aria-label="Protection relays">
+      <h2>Protection relays</h2>
+      <div className="chips" role="tablist" aria-label="Filter relays">
         <button role="tab" aria-selected={filter === "all"} className={filter === "all" ? "on" : ""} onClick={() => setFilter("all")}>All</button>
         <button role="tab" aria-selected={filter === "normal"} className={filter === "normal" ? "on" : ""} onClick={() => setFilter("normal")}><i className="dot green" /> Normal {counts.normal}</button>
         <button role="tab" aria-selected={filter === "attention"} className={filter === "attention" ? "on" : ""} onClick={() => setFilter("attention")}><i className="dot red" /> Attention {counts.attention}</button>
       </div>
-      {!t && <p className="empty">Waiting for the plant…</p>}
-      {t && shown.length === 0 && <p className="empty">No controllers match this filter.</p>}
-      {t && rows && shown.map(({ key, id }) => {
-        const st = t.plc_status[key];
-        const isOpen = open[key];
+      {!t && <p className="empty">Waiting for the substation…</p>}
+      {t && shown.length === 0 && <p className="empty">No relays match this filter.</p>}
+      {t && rows && shown.map(({ key, id, role }) => {
+        const st = t.ied_status[key];
+        // Open automatically when a relay needs attention.
+        const isOpen = open[key] || attention(key);
         return (
-          <article className={`plc ${st}`} key={id}>
-            <button className="plc-head" aria-expanded={isOpen} onClick={() => setOpen((o) => ({ ...o, [key]: !o[key] }))}>
-              <span className="plc-icon"><ChipIcon /></span>
-              <span className="plc-name">
+          <article className={`ied ${st}`} key={id}>
+            <button className="ied-head" aria-expanded={isOpen} onClick={() => setOpen((o) => ({ ...o, [key]: !isOpen }))}>
+              <span className="ied-icon"><RelayIcon /></span>
+              <span className="ied-name">
                 <b>{id}</b>
+                <span className="role">{role}</span>
                 <span className={`state-line ${st}`}><i /> {LABEL[st]}</span>
               </span>
               <Chevron open={isOpen} />

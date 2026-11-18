@@ -1,131 +1,154 @@
 import type { Incident, Telemetry } from "../types";
 
 // Isometric projection. u runs down-right, v runs down-left, z is height in pixels.
-const S = 62;
+const S = 46;
 const K = S * 0.866;
 const H = S * 0.5;
-const OX = 150;
-const OY = 168;
-export const VB_W = 820;
-export const VB_H = 430;
+const OX = 260;
+const OY = 150;
+export const VB_W = 800;
+export const VB_H = 490;
+const BUS_Z = 18;
 
-const P = (u: number, v: number, z = 0): [number, number] => [OX + (u - v) * K, OY + (u + v) * H - z];
-const pts = (a: [number, number][]) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
+type Pt = [number, number];
+const P = (u: number, v: number, z = 0): Pt => [OX + (u - v) * K, OY + (u + v) * H - z];
+const pts = (a: Pt[]) => a.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
 /** Position as a percentage of the viewBox, for HTML callouts layered over the SVG. */
 export const pct = (u: number, v: number, z = 0) => {
   const [x, y] = P(u, v, z);
   return { left: `${(x / VB_W) * 100}%`, top: `${(y / VB_H) * 100}%` };
 };
 
-function slab(u0: number, u1: number, v0: number, v1: number, depth: number, fill: string, side: string) {
+function Slab({ u0, u1, v0, v1, depth }: { u0: number; u1: number; v0: number; v1: number; depth: number }) {
   const top = [P(u0, v0), P(u1, v0), P(u1, v1), P(u0, v1)];
-  const down = (p: [number, number]): [number, number] => [p[0], p[1] + depth];
+  const down = (p: Pt): Pt => [p[0], p[1] + depth];
   return (
     <g>
-      <polygon points={pts([top[3], top[2], down(top[2]), down(top[3])])} fill={side} />
-      <polygon points={pts([top[2], top[1], down(top[1]), down(top[2])])} fill={side} opacity={0.8} />
-      <polygon points={pts(top)} fill={fill} />
+      <polygon points={pts([top[3], top[2], down(top[2]), down(top[3])])} fill="rgba(190,203,232,0.7)" />
+      <polygon points={pts([top[2], top[1], down(top[1]), down(top[2])])} fill="rgba(190,203,232,0.55)" />
+      <polygon points={pts(top)} fill="rgba(255,255,255,0.82)" />
+      {[-4, -2, 0, 2, 4].map((v) => <polyline key={`v${v}`} points={pts([P(u0, v), P(u1, v)])} className="floor-line" />)}
+      {[0, 2, 4, 6, 8].map((u) => <polyline key={`u${u}`} points={pts([P(u, v0), P(u, v1)])} className="floor-line" />)}
     </g>
   );
 }
 
-function Tank({ u, v, r, h, level, id }: { u: number; v: number; r: number; h: number; level: number; id: string }) {
-  const [cx, cy] = P(u, v);
-  const rx = r * K * 1.414;
-  const ry = r * H * 1.414;
-  const fillH = (Math.max(0, Math.min(100, level)) / 100) * h;
-  const body = `M ${cx - rx} ${cy - h} L ${cx - rx} ${cy} A ${rx} ${ry} 0 0 0 ${cx + rx} ${cy} L ${cx + rx} ${cy - h} Z`;
-  const water = `M ${cx - rx} ${cy - fillH} L ${cx - rx} ${cy} A ${rx} ${ry} 0 0 0 ${cx + rx} ${cy} L ${cx + rx} ${cy - fillH} Z`;
-  return (
-    <g>
-      <ellipse cx={cx} cy={cy + 4} rx={rx + 4} ry={ry + 3} fill="rgba(60,80,140,0.12)" />
-      <path d={body} fill={`url(#glass-${id})`} stroke="rgba(255,255,255,0.95)" strokeWidth={1.5} />
-      <path d={water} fill={`url(#water-${id})`} />
-      <ellipse cx={cx} cy={cy - fillH} rx={rx} ry={ry} fill="rgba(120,170,255,0.55)" />
-      <ellipse cx={cx} cy={cy - h} rx={rx} ry={ry} fill="rgba(255,255,255,0.55)" stroke="rgba(255,255,255,0.95)" strokeWidth={1.5} />
-      <defs>
-        <linearGradient id={`glass-${id}`} x1="0" x2="1">
-          <stop offset="0" stopColor="rgba(255,255,255,0.85)" />
-          <stop offset="0.5" stopColor="rgba(235,242,255,0.55)" />
-          <stop offset="1" stopColor="rgba(205,220,248,0.7)" />
-        </linearGradient>
-        <linearGradient id={`water-${id}`} x1="0" x2="1">
-          <stop offset="0" stopColor="#5E96FF" stopOpacity={0.75} />
-          <stop offset="1" stopColor="#2F6BFF" stopOpacity={0.85} />
-        </linearGradient>
-      </defs>
-    </g>
-  );
-}
-
-function Pump({ u, v, on }: { u: number; v: number; on: boolean }) {
-  const [cx, cy] = P(u, v);
-  const rx = 0.42 * K * 1.414;
-  const ry = 0.42 * H * 1.414;
-  const h = 34;
-  return (
-    <g>
-      <ellipse cx={cx} cy={cy + 3} rx={rx + 3} ry={ry + 2} fill="rgba(60,80,140,0.14)" />
-      <path d={`M ${cx - rx} ${cy - h} L ${cx - rx} ${cy} A ${rx} ${ry} 0 0 0 ${cx + rx} ${cy} L ${cx + rx} ${cy - h} Z`} fill="#E6ECF8" stroke="#fff" strokeWidth={1.5} />
-      <ellipse cx={cx} cy={cy - h} rx={rx} ry={ry} fill="#F6F8FD" stroke="#fff" strokeWidth={1.5} />
-      <circle cx={cx} cy={cy - h} r={5} fill={on ? "var(--green)" : "#B8C2D8"} className={on ? "led" : ""} />
-    </g>
-  );
-}
-
-function Box({ u, v, w, d, h, top, side }: { u: number; v: number; w: number; d: number; h: number; top: string; side: string }) {
+function Box({ u, v, w, d, h, top, side, alarm = false }: { u: number; v: number; w: number; d: number; h: number; top: string; side: string; alarm?: boolean }) {
   const u0 = u - w / 2, u1 = u + w / 2, v0 = v - d / 2, v1 = v + d / 2;
+  const stroke = alarm ? "var(--red)" : "#fff";
   return (
     <g>
-      <polygon points={pts([P(u0, v1), P(u1, v1), P(u1, v1, h), P(u0, v1, h)])} fill={side} />
-      <polygon points={pts([P(u1, v0), P(u1, v1), P(u1, v1, h), P(u1, v0, h)])} fill={side} opacity={0.78} />
-      <polygon points={pts([P(u0, v0, h), P(u1, v0, h), P(u1, v1, h), P(u0, v1, h)])} fill={top} stroke="#fff" strokeWidth={1} />
+      <ellipse cx={P(u, v)[0] + 6} cy={P(u, v)[1] + 3} rx={w * K * 0.95} ry={w * H * 0.55} fill="rgba(60,80,140,0.10)" />
+      <polygon points={pts([P(u0, v1), P(u1, v1), P(u1, v1, h), P(u0, v1, h)])} fill={side} stroke={stroke} strokeWidth={alarm ? 1.6 : 0.6} />
+      <polygon points={pts([P(u1, v0), P(u1, v1), P(u1, v1, h), P(u1, v0, h)])} fill={side} opacity={0.78} stroke={stroke} strokeWidth={alarm ? 1.6 : 0.6} />
+      <polygon points={pts([P(u0, v0, h), P(u1, v0, h), P(u1, v1, h), P(u0, v1, h)])} fill={top} stroke={stroke} strokeWidth={alarm ? 1.6 : 1} />
+    </g>
+  );
+}
+
+/** Power line. Dashes animate along the line when power flows; `rev` flips the direction. */
+function Wire({ path, on, kw, rev }: { path: Pt[]; on: boolean; kw: number; rev: boolean }) {
+  const flowing = on && Math.abs(kw) > 5;
+  const dur = Math.max(0.45, 2.6 - Math.abs(kw) / 200);
+  const d = pts(path);
+  return (
+    <g>
+      <polyline points={d} className={on ? "pipe-base" : "pipe-base off"} />
+      {flowing && <polyline points={d} className={`pipe-flow${rev ? " rev" : ""}`} style={{ animationDuration: `${dur}s` }} />}
+    </g>
+  );
+}
+
+/** A feeder from the bus (a) through a breaker (br) to a device (b). rev = power flows from the device toward the bus. */
+function Feeder({ a, br, b, closed, kw, rev }: { a: Pt; br: Pt; b: Pt; closed: boolean; kw: number; rev: boolean }) {
+  return (
+    <g>
+      <Wire path={[a, br]} on={closed} kw={kw} rev={rev} />
+      <Wire path={[br, b]} on={closed} kw={kw} rev={rev} />
+    </g>
+  );
+}
+
+function Breaker({ u, v, closed, label, alarm }: { u: number; v: number; closed: boolean; label: string; alarm?: boolean }) {
+  const [x, y] = P(u, v, 34);
+  return (
+    <g>
+      <Box u={u} v={v} w={0.36} d={0.36} h={14} top={closed ? "#DDF5E7" : "#FFE3E4"} side={closed ? "#B7E3C9" : "#F2B4B7"} alarm={alarm} />
+      <circle cx={P(u, v, 14)[0]} cy={P(u, v, 14)[1]} r={3.5} fill={closed ? "var(--green)" : "var(--red)"} className={closed ? "" : "led alarm"} />
+      <text x={x} y={y} textAnchor="middle" className="svg-small">{label}</text>
+    </g>
+  );
+}
+
+function Pylon() {
+  const [x, y] = P(-0.9, 0.2);
+  return (
+    <g stroke="#A9B6D3" strokeWidth={2} fill="none" strokeLinecap="round" strokeLinejoin="round">
+      <path d={`M ${x - 16} ${y} L ${x} ${y - 100} L ${x + 16} ${y}`} />
+      <path d={`M ${x - 11} ${y - 36} H ${x + 11} M ${x - 7} ${y - 68} H ${x + 7} M ${x - 12} ${y - 36} L ${x + 7} ${y - 68} M ${x + 12} ${y - 36} L ${x - 7} ${y - 68}`} strokeWidth={1.4} />
+      <path d={`M ${x - 26} ${y - 88} H ${x + 26} M ${x - 22} ${y - 72} H ${x + 22}`} strokeWidth={2.4} />
     </g>
   );
 }
 
 export default function IsoPlant({ t, incident }: { t: Telemetry; incident: Incident | undefined }) {
-  const flowing = t.flow > 5;
-  const dur = flowing ? Math.max(0.35, 140 / t.flow) : 0;
-  const blocked = !t.valve1;
-  const pipeZ = 22;
-  const route = pts([P(0.85, 0, pipeZ), P(5, 0, pipeZ), P(5, -2.55, pipeZ)]);
-  const route2 = pts([P(5, -4.25, pipeZ), P(5, -4.8, pipeZ)]);
-  const out = pts([P(5, -5.6, pipeZ), P(5, -6.2, pipeZ)]);
-  const flowCls = `pipe-flow ${blocked ? "blocked" : ""}`;
-  const style = flowing ? { animationDuration: `${dur}s` } : { animation: "none", opacity: 0 };
   const alarm = incident && incident.status !== "recovered";
+  const energised = t.cb_main || t.pv_kw > 5 || Math.abs(t.bess_kw) > 5;
+  const soc = Math.max(0, Math.min(100, t.bess_soc));
+  const socColor = soc < 20 ? "var(--red)" : soc < 35 ? "var(--amber)" : "var(--green)";
+  const pvOn = t.cb_pv && t.pv_kw > 5;
+
+  // key points
+  const busA = P(1.5, 0, BUS_Z), busB = P(8.2, 0, BUS_Z);
+  const hospitalOn = t.cb_crit && t.load_critical_kw > 5;
+  const campusOn = t.cb_nc && t.load_noncritical_kw > 5;
 
   return (
-    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="iso" role="img" aria-label="Live isometric plant view">
-      {/* floor */}
-      {slab(-1.3, 6.0, -1.1, 1.1, 14, "rgba(255,255,255,0.8)", "rgba(190,203,232,0.7)")}
-      {slab(3.9, 6.1, -6.3, 1.1, 14, "rgba(255,255,255,0.8)", "rgba(190,203,232,0.7)")}
-      {alarm && <polygon points={pts([P(3.9, -6.3), P(6.1, -6.3), P(6.1, 1.1), P(3.9, 1.1)])} fill="rgba(229,72,77,0.06)" />}
+    <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="iso" role="img" aria-label="Live isometric substation view">
+      <Slab u0={-1.4} u1={8.8} v0={-4.4} v1={4.4} depth={12} />
+      {alarm && <polygon points={pts([P(-1.4, -4.4), P(8.8, -4.4), P(8.8, 4.4), P(-1.4, 4.4)])} fill="rgba(229,72,77,0.05)" />}
 
-      {/* pipes */}
-      {[route, route2, out].map((d, i) => (
-        <g key={i}>
-          <polyline points={d} className="pipe-base" />
-          <polyline points={d} className={flowCls} style={style} />
-        </g>
-      ))}
+      {/* utility connection and bus */}
+      <Wire path={[P(0.6, 0, BUS_Z), busA]} on kw={t.grid_import_kw} rev={t.grid_import_kw < 0} />
+      <Wire path={[busA, P(4, 0, BUS_Z)]} on={energised && t.cb_main} kw={t.grid_import_kw} rev={t.grid_import_kw < 0} />
+      <Wire path={[P(4, 0, BUS_Z), busB]} on={energised} kw={0} rev={false} />
 
-      {/* junction nodes */}
-      {[P(0.85, 0, pipeZ), P(5, 0, pipeZ), P(5, -2.55, pipeZ), P(5, -4.25, pipeZ), P(5, -6.2, pipeZ)].map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={4} className={`node ${blocked ? "bad" : "ok"}`} />
+      {/* feeders: PV and battery (sources), hospital and campus (loads) */}
+      <Feeder a={P(3, 0, BUS_Z)} br={P(3, -1.2, BUS_Z)} b={P(3, -2.4, BUS_Z)} closed={t.cb_pv} kw={t.pv_kw} rev />
+      <Feeder a={P(5.6, 0, BUS_Z)} br={P(5.6, -1.2, BUS_Z)} b={P(5.6, -2.4, BUS_Z)} closed={t.cb_bess} kw={t.bess_kw} rev={t.bess_kw > 0} />
+      <Feeder a={P(4, 0, BUS_Z)} br={P(4, 1.2, BUS_Z)} b={P(4, 2.3, BUS_Z)} closed={t.cb_crit} kw={t.load_critical_kw} rev={false} />
+      <Feeder a={P(7, 0, BUS_Z)} br={P(7, 1.2, BUS_Z)} b={P(7, 2.3, BUS_Z)} closed={t.cb_nc} kw={t.load_noncritical_kw} rev={false} />
+      {[P(3, 0, BUS_Z), P(4, 0, BUS_Z), P(5.6, 0, BUS_Z), P(7, 0, BUS_Z), busA].map(([x, y], i) => (
+        <circle key={i} cx={x} cy={y} r={4} className={`node ${energised ? "ok" : "bad"}`} />
       ))}
 
       {/* equipment, back to front */}
-      <Pump u={5} v={-5.2} on={t.pump2} />
-      <Tank u={0} v={0} r={0.85} h={104} level={t.tank1_level} id="t1" />
-      <Tank u={5} v={-3.4} r={0.85} h={104} level={t.tank2_level} id="t2" />
-      <Pump u={2} v={0} on={t.pump1} />
-      <Box u={3.4} v={0} w={1.1} d={0.8} h={34} top="#F6F8FD" side="#D5DDF0" />
-      <g>
-        <Box u={5} v={-1.5} w={0.55} d={0.55} h={24} top={blocked ? "#FFE3E4" : "#DDF5E7"} side={blocked ? "#F2B4B7" : "#B7E3C9"} />
-        <circle cx={P(5, -1.5, 24)[0]} cy={P(5, -1.5, 24)[1]} r={6} fill={blocked ? "var(--red)" : "var(--green)"} className={blocked ? "led alarm" : "led"} />
-      </g>
+      <Pylon />
+      <Box u={0.2} v={0} w={1.0} d={0.8} h={26} top="#F6F8FD" side="#D5DDF0" />
+      <Breaker u={1.5} v={0} closed={t.cb_main} label="CB-MAIN" alarm={!t.cb_main} />
+
+      {/* PV array: 3 x 2 panels */}
+      {[2.3, 3.0, 3.7].flatMap((u) => [-3.0, -3.7].map((v) => (
+        <Box key={`${u}${v}`} u={u} v={v} w={0.62} d={0.55} h={5} top={pvOn ? "#3F73E8" : "#B9C5DD"} side={pvOn ? "#9DB6EE" : "#D3DAEA"} />
+      )))}
+      <Breaker u={3} v={-1.2} closed={t.cb_pv} label="CB-PV" alarm={!t.cb_pv} />
+
+      {/* battery container with a charge bar on top */}
+      <Box u={5.6} v={-3.3} w={1.8} d={0.9} h={30} top="#F6F8FD" side="#D5DDF0" />
+      <polygon points={pts([P(4.85, -3.45, 31), P(6.35, -3.45, 31), P(6.35, -3.15, 31), P(4.85, -3.15, 31)])} fill="#DDE3F0" />
+      <polygon points={pts([P(4.85, -3.45, 31.5), P(4.85 + 1.5 * (soc / 100), -3.45, 31.5), P(4.85 + 1.5 * (soc / 100), -3.15, 31.5), P(4.85, -3.15, 31.5)])} fill={socColor} />
+      <Breaker u={5.6} v={-1.2} closed={t.cb_bess} label="CB-BESS" alarm={!t.cb_bess} />
+
+      {/* hospital: white building with a red cross on its front face */}
+      <Breaker u={4} v={1.2} closed={t.cb_crit} label="CB-CRIT" alarm={!t.cb_crit} />
+      <Box u={4.0} v={3.3} w={1.7} d={1.4} h={40} top={hospitalOn ? "#F6F8FD" : "#C9CEDB"} side={hospitalOn ? "#E3E9F6" : "#AEB5C6"} alarm={!t.cb_crit} />
+      <polygon points={pts([P(4.85, 2.95, 24), P(4.85, 3.65, 24), P(4.85, 3.65, 30), P(4.85, 2.95, 30)])} fill={hospitalOn ? "var(--red)" : "#9aa4bc"} />
+      <polygon points={pts([P(4.85, 3.2, 17), P(4.85, 3.4, 17), P(4.85, 3.4, 37), P(4.85, 3.2, 37)])} fill={hospitalOn ? "var(--red)" : "#9aa4bc"} />
+
+      {/* campus: two buildings */}
+      <Breaker u={7} v={1.2} closed={t.cb_nc} label="CB-NC" alarm={false} />
+      <Box u={6.6} v={3.2} w={1.1} d={1.0} h={26} top={campusOn ? "#F6F8FD" : "#D5DAE6"} side={campusOn ? "#E3E9F6" : "#BDC4D4"} />
+      <Box u={7.6} v={3.4} w={1.0} d={1.2} h={34} top={campusOn ? "#F6F8FD" : "#D5DAE6"} side={campusOn ? "#E3E9F6" : "#BDC4D4"} />
     </svg>
   );
 }

@@ -1,153 +1,151 @@
 # ARMOUR LABS: Task Distribution and Teammate Prompts
 
 Repo: https://github.com/S-tevens/ARMOUR-LABS
-Companion doc: [ARMOUR_LABS_MVP_BUILD_PLAN.md](ARMOUR_LABS_MVP_BUILD_PLAN.md)
+Companion docs: [ARMOUR_LABS_MVP_BUILD_PLAN.md](ARMOUR_LABS_MVP_BUILD_PLAN.md), [docs/contracts.md](docs/contracts.md), [CONTRIBUTING.md](CONTRIBUTING.md)
+
+Domain: a **campus microgrid substation** (utility, solar, battery, hospital feeder, campus feeder, three IEDs, SCADA). The base project already runs end to end; these tasks build on it.
 
 ## 1. Setup (repo owner does this once)
 
-1. Add both teammates as collaborators: GitHub repo → Settings → Collaborators → Add people (they accept the email invite).
-2. Protect `main`: Settings → Branches → require a pull request before merging.
-3. Create the skeleton folders and `docs/contracts.md` (copy the contracts from section 3 below), then push.
+1. Add both teammates as collaborators: GitHub repo, Settings, Collaborators.
+2. Protect `main`: Settings, Branches, require a pull request before merging.
+3. Put the teammates' GitHub usernames in `.github/CODEOWNERS`.
 
 Folder ownership (nobody edits another person's folder without asking):
 
 | Folder | Owner |
 |---|---|
-| `frontend/` | P1 (you) |
+| `frontend/` | P1 |
 | `backend/sim/`, `backend/twin/`, `data/` | P2 |
 | `backend/detect/`, `backend/incident/`, `backend/api/`, `backend/db/` | P3 |
-| `docs/contracts.md` | all three (changes need everyone's OK) |
+| `backend/core/contracts.py`, `frontend/src/types.ts`, `docs/contracts.md` | all three (changes need everyone's OK) |
 
-## 2. Who does what
+## 2. What already works (do not rebuild)
 
-### P1 (you): frontend and integration lead
+- Substation simulator with 11 scenarios (attacks, faults, benign look-alikes), seeded and deterministic.
+- Model-based digital twin v0 using the authorised command log only.
+- Staged containment and recovery verification with a dwell time.
+- Labelled dataset generator (`python -m sim.dataset`).
+- FastAPI backend, WebSocket stream, SQLite event log, incident manager (placeholder classification), threshold baseline detector.
+- Dashboard: isometric substation, relays, sensor strip, twin chart, detector scores, network graph, incidents.
+- 30 backend tests and CI.
+
+## 3. Who does what (remaining work)
+
+### P1: frontend and integration lead
 | Build | Tasks |
 |---|---|
-| 1 | React + TS app shell, dark industrial theme, WebSocket client, mock server that replays the contract JSON, animated SVG plant (pipes, tank levels, pump and valve states), live readouts, status bar |
-| 2 | Scenario selector and launch button, network topology panel (green/amber/red, path highlight), alert feed, plant reacting to attacks |
-| 3 | Threat monitor (four score gauges, severity, confidence), metrics page (confusion matrix, baseline vs ML vs combined, labelled by data source) |
-| 4 | Digital-twin comparison table (expected/observed/residual), incident investigation panel (evidence tagged observed/correlated/inferred, uncertainty), propagation graph, timeline |
-| 5 | Response plan panel with approve button and dry-run preview, recovery verification table, replay scrubber, UI polish, demo script, integration of all three parts |
+| 3 | Metrics page (confusion matrix, baseline vs ML vs combined, labelled by data source); live score display polish |
+| 4 | Incident panel: evidence tagged observed/correlated/inferred, likely cause with uncertainty, propagation graph, timeline |
+| 5 | Response panel with dry-run preview, recovery verification table, replay scrubber (timeline), UI polish, demo script, recorded fallback video, final integration |
 
-### P2: simulation, attacks and digital twin
+### P2: simulation and twin
 | Build | Tasks |
 |---|---|
-| 1 | Deterministic plant model (Tank 1 → Pump 1 → Filter → Valve 1 → Tank 2 → Pump 2), noise, seeded simulation clock, 1 Hz telemetry over WebSocket |
-| 2 | Attack engine: `unauthorised_valve_close`, `false_data_injection`; network/command event records with `authorised` flag; scenario start/stop API; plant reacts physically |
-| 3 | Labelled datasets (normal, attacks, subtle variants), benign `sensor_drift` fault, configurable noise/disturbance/drift |
-| 4 | Independent digital twin (own fitted parameters, inputs are the authorised command log only), residuals, normalised residuals, tolerance bands, observed-state leak test |
-| 5 | Simulated containment (reject command, safe state, restore), twin dry-run of the response, recovery verification with tolerances and dwell time |
+| 3 | Extra seeds and variants for the datasets; keep the simulator deterministic; check scenario timing against detector needs |
+| 4 | Fit the twin's parameters from normal data (loads, PV efficiency, battery lag); set tolerance bands from held-out normal data; keep the "observed state does not change expectations" test passing |
+| 5 | Twin dry-run of a proposed containment: predicted outcome and any unsafe side effect (for example reclosing onto a fault) |
 
 ### P3: detection, incidents and API
 | Build | Tasks |
 |---|---|
-| 1 | FastAPI skeleton, SQLite schema, append-only event log, mock detector returning "normal" |
-| 2 | Threshold baseline detector on telemetry, first alert stream |
-| 3 | Feature extraction, Isolation Forest trained on normal data, time-based train/test split, physics invariants (mass balance, pump on ⇒ flow, valve closed ⇒ no flow), evaluation script, `GET /metrics` |
-| 4 | Evidence fusion with the §10 rule table, incident classification (attack/fault/unknown), time alignment of evidence, template-based explanations from real fields only, propagation graph data |
-| 5 | Response recommendation, approve-response endpoint, incident replay endpoint, final evaluation numbers |
+| 3 | Feature extraction; Isolation Forest with a run-based train/test split; physics invariants (power balance, breaker open means zero feeder load, plausible frequency); percentile score normalisation; evaluation script and `GET /metrics` |
+| 4 | Evidence fusion rule table (attack, fault, unknown with confidence); time alignment of evidence; template explanations from real fields only; propagation-graph data |
+| 5 | Response recommendation; replay endpoint options; final evaluation numbers |
 
-## 3. Shared contracts (copy into `docs/contracts.md`)
+## 4. Contracts
 
-- **Telemetry tick** (WebSocket `/ws/telemetry`, 1 Hz, sent inside an envelope `{type, data}`; see `docs/contracts.md`, which is the source of truth): `{t, tick, tank1_level, tank2_level, pressure, flow, temperature, pump1, pump2, valve1, plc_status:{plc01,plc02,plc03}}`
-- **Network/command event:** `{seq, t, src, dst, function_code, register, value, authorised:bool}`
-- **Twin state:** `{t, expected:{...}, residual:{...}, norm_residual:{...}}`
-- **Incident:** `{id, t_start, severity, confidence, affected_devices[], classification (attack|fault|unknown), scores:{network, controller, process, twin}, evidence[{type, text, tag: observed|correlated|inferred}], status}`
-- **API:** `POST /scenario/start {name}`, `POST /scenario/stop`, `POST /incident/{id}/approve-response`, `GET /incidents`, `GET /incidents/{id}/replay`, `GET /metrics`
-- **Scenarios:** `unauthorised_valve_close`, `false_data_injection`, `sensor_drift`
-- **PLC mapping:** PLC-01 drives Pump 1 and Pump 2; PLC-02 drives Valve 1; PLC-03 reads all sensors.
+The single source of truth is `backend/core/contracts.py`, documented in `docs/contracts.md`. Read it before writing code. Key points:
 
-## 4. Git workflow for everyone
+- Telemetry: `frequency, bus_voltage, grid_import_kw, pv_kw, bess_kw, bess_soc, load_critical_kw, load_noncritical_kw, irradiance`, breakers `cb_main, cb_pv, cb_bess, cb_crit, cb_nc` (true = closed), and `ied_status` for IED-01..03.
+- The WebSocket `/ws/telemetry` sends envelopes `{type, data}` with types `telemetry, event, twin, scores, incident`.
+- REST: `/scenarios`, `/scenario/start|stop`, `/incidents`, `/incident/{id}/approve-response`, `/incidents/{id}/replay`, `/recovery`, `/metrics`.
+- Scenarios: `unauthorised_breaker_trip`, `false_data_injection`, `replay_attack`, `dos_flood`, `fdi_small`, `fdi_slow_ramp`, `sensor_drift`, `stuck_breaker`, `pv_inverter_trip`, `planned_switching`, `cloud_cover`.
+- IED mapping: IED-01 utility interface (CB-MAIN, grid meter); IED-02 solar and battery (CB-PV, CB-BESS); IED-03 load feeders (CB-CRIT hospital, CB-NC campus).
+
+## 5. Git workflow for everyone
 
 ```bash
 git clone https://github.com/S-tevens/ARMOUR-LABS.git
 cd ARMOUR-LABS
-git checkout -b p2/build1-simulator      # branch name: <person>/<build>-<topic>
-# ...work, then:
+git checkout -b p2/build3-datasets        # branch name: <person>/<build>-<topic>
+# ...work, run the checks in CONTRIBUTING.md, then:
 git add <your folder>
-git commit -m "Build 1: plant simulator"
-git push -u origin p2/build1-simulator   # then open a pull request on GitHub
+git commit -m "Build 3: extra dataset seeds"
+git push -u origin p2/build3-datasets     # then open a pull request on GitHub
 ```
 
-Rules: never push straight to `main`; pull `main` before starting each build (`git pull origin main`); keep PRs small; the repo owner merges once the build's demo checkpoint passes. Do not commit secrets, `.env` files, virtual environments or `node_modules`.
+Rules: never push straight to `main`; pull `main` before starting each build (`git pull origin main`); keep PRs small; the repo owner merges once the build's demo checkpoint passes. Do not commit secrets, `.env` files, virtual environments, `node_modules` or generated datasets.
 
-## 5. Prompts to give each person (paste into Claude Code or any coding assistant)
+## 6. Prompts to give each person (paste into Claude Code or any coding assistant)
 
 ### Common preamble (include in all three prompts)
 
 ```text
-You are helping build ARMOUR LABS, an AI-powered digital twin for industrial
-cyberattack detection, explanation and recovery, shown on a SIMULATED
-water-treatment plant. Everything runs in software; never connect to real
-equipment or networks.
+You are helping build ARMOUR LABS, an AI-powered digital twin for power-grid
+cyberattack detection, explanation and recovery, demonstrated on a SIMULATED campus
+microgrid substation (utility, solar, battery, a hospital feeder and a campus feeder,
+three IEDs, SCADA). Everything runs in software; never connect to real equipment,
+relays or networks.
 
-Repo: https://github.com/S-tevens/ARMOUR-LABS (clone it first, work on a
-feature branch named <role>/<build>-<topic>, never push to main, open a PR).
-Read README.md, ARMOUR_LABS_MVP_BUILD_PLAN.md and docs/contracts.md first and
-follow the JSON contracts exactly. If a contract must change, stop and tell me
-instead of changing it. Only edit the folders I own. Stack: Python + FastAPI +
-SQLite on the backend, React + TypeScript on the frontend. Use a fixed random
-seed so runs are repeatable. Rules: an anomaly is evidence, not proof of an
-attack; label illustrative values as such; never hard-code metrics; "Recovered"
-is shown only when verification checks pass. Work one build at a time, finish
-the build's acceptance check, and give me a short summary plus the commands to
-run it before moving on. Add a short README in your folder explaining how to
-run and test it.
+Repo: https://github.com/S-tevens/ARMOUR-LABS. Clone it, read README.md,
+ARMOUR_LABS_MVP_BUILD_PLAN.md and docs/contracts.md, and run the project first
+(the README explains how). A working base already exists: do not rebuild it. Work on
+a feature branch named <role>/<build>-<topic>, never push to main, and open a pull
+request. Follow the JSON contracts exactly; if a contract must change, stop and tell
+me instead of changing it. Only edit the folders I own. Stack: Python + FastAPI +
+SQLite on the backend, React + TypeScript on the frontend. Use fixed random seeds.
+Rules: an anomaly is evidence, not proof of an attack; label illustrative values;
+never hard-code metrics; "Recovered" is shown only when verification checks pass; a
+planned, authorised breaker operation must not be flagged as an attack. Run the tests
+(backend: python -m pytest, frontend: npm run build) before each pull request. Work one
+build at a time, finish its acceptance check, and give me a short summary plus the
+commands to run it before moving on.
 ```
 
-### Prompt for P1 (you): frontend and integration
+### Prompt for P1: frontend and integration
 
 ```text
 [Common preamble]
 
-Role: P1, frontend and integration. You own frontend/ only.
-Start with Build 1: create a React + TypeScript (Vite) app with a dark
-industrial theme (charcoal/navy background, green = healthy, amber =
-suspicious, red = incident, blue = water flow). Build a mock server (or a
-mock mode) that replays telemetry and events in the contract shapes, so the UI
-works before the real backend exists, and a WebSocket client that can switch
-to the real /ws/telemetry. Build an animated SVG plant: Tank 1 -> Pump 1 ->
-Filter -> Valve 1 -> Tank 2 -> Pump 2 with flowing pipes, tank fill levels,
-pump/valve states, sensor readouts and a "SYSTEM STATUS" bar. All visuals must
-be driven by incoming data, not canned animation.
-Then, in order: Build 2 (scenario selector, launch button, network topology
-with green/amber/red nodes and highlighted path, alert feed), Build 3 (threat
-monitor gauges, metrics page with confusion matrix and baseline vs ML vs
-combined, labelled by data source), Build 4 (expected/observed/residual table,
-incident panel with evidence tagged observed/correlated/inferred, propagation
-graph, timeline), Build 5 (response plan with approve button and dry-run
-preview, recovery verification table, replay scrubber, polish). Every build
-must end in a frontend I can present at an evaluation.
+Role: P1, frontend and integration. You own frontend/ only. The dashboard already
+exists (isometric substation view, relays panel, sensor strip, twin chart, detector
+scores, network graph, incidents) in a light frosted-glass style; keep that visual
+language and the existing components' patterns.
+Build 3: a Metrics page that reads GET /metrics (confusion matrix, precision/recall/F1,
+false-positive rate, detection latency, baseline vs ML vs combined) and labels every
+result by data source (simulator or public dataset). Until the endpoint exists, show
+an honest empty state ("no measured results yet"), never invented numbers.
+Build 4: an incident panel showing evidence tagged observed/correlated/inferred, the
+likely cause with its uncertainty, a propagation graph (incident -> command -> breaker
+-> feeder -> impact) and a timeline.
+Build 5: a response panel with the dry-run preview, the recovery verification table
+from GET /recovery, a replay scrubber driven by GET /incidents/{id}/replay, UI polish,
+a rehearsed demo script (see section 23 of the project description) and a recorded
+fallback video. Every build must end in a frontend I can present at an evaluation.
 ```
 
-### Prompt for P2: simulation, attacks and digital twin
+### Prompt for P2: simulation and digital twin
 
 ```text
 [Common preamble]
 
-Role: P2, simulation, attack engine and digital twin. You own backend/sim/,
-backend/twin/ and data/ only.
-Build 1: a deterministic plant model (Tank 1 -> Pump 1 -> Filter -> Valve 1 ->
-Tank 2 -> Pump 2) with simple understandable process rules, small realistic
-sensor noise and a seeded simulation clock, publishing 1 Hz telemetry in the
-contract shape over WebSocket /ws/telemetry. Normal state: valve open,
-pressure ~2.1 bar, flow ~110 L/min.
-Build 2: an attack engine with scenarios unauthorised_valve_close (closing the
-valve raises pressure and collapses flow; Tank 1 risks overflow) and
-false_data_injection (a sensor reports a manipulated value), plus network/
-command event records with an `authorised` flag, and POST /scenario/start and
-/scenario/stop. The plant must physically react.
-Build 3: labelled datasets (normal, attacks, subtle small/slow variants), a
-benign sensor_drift fault, configurable noise/disturbance/drift.
-Build 4: an INDEPENDENT digital twin: its own equations and fitted parameters
-(not the simulator's constants), whose only command input is the authorised
-command log. Compute expected state, residuals, normalised residuals and
-tolerance bands from held-out normal data. Include a test proving the twin's
-output does not change when the observed valve state is altered.
-Build 5: simulated containment (reject command, safe state, restore), a twin
-dry-run predicting the response outcome, and recovery verification with
-tolerances plus an N-second dwell time returning Recovered / Recovering /
-Unresolved.
+Role: P2, simulation and digital twin. You own backend/sim/, backend/twin/ and data/ only.
+The substation model, 11 scenarios, staged containment, recovery verification, dataset
+generator and a model-based twin v0 already exist. Read sim/plant.py, sim/scenarios.py,
+twin/twin.py and the tests first.
+Build 3: extend the dataset generator with extra seeds and variants if the detector
+work needs them; keep the simulator deterministic.
+Build 4: FIT the twin's parameters from normal simulator data (load profiles, PV
+efficiency, battery lag) instead of hand-set values, and set tolerance bands and
+residual scales from held-out normal data. Keep these properties, with tests: the
+twin's expectations come only from the authorised command log (they do not change when
+observed breaker states change), it stays quiet in normal operation across seeds,
+planned switching and passing clouds raise no residual alarm, and the stuck breaker
+and unauthorised trip do.
+Build 5: a twin dry-run of a proposed containment that predicts the outcome (time to
+return within the recovery limits) and flags unsafe side effects, such as reclosing a
+breaker onto a fault.
 ```
 
 ### Prompt for P3: detection, incidents and API
@@ -156,32 +154,28 @@ Unresolved.
 [Common preamble]
 
 Role: P3, detection, incident intelligence and API. You own backend/detect/,
-backend/incident/, backend/api/ and backend/db/ only.
-Build 1: a FastAPI app skeleton, SQLite schema with an append-only event log
-(telemetry, events, alerts, incidents), and a mock detector that returns
-"normal".
-Build 2: a simple threshold baseline detector on telemetry that produces a
-real alert stream from actual telemetry.
-Build 3: feature extraction (rolling stats, rates of change, command
-frequency), an Isolation Forest trained on normal data, a time-based
-train/test split (no random splitting), physics-invariant checks (mass
-balance, pump on => flow > 0, valve closed => downstream flow ~ 0), and an
-evaluation script reporting precision, recall, F1, false-positive rate,
-confusion matrix, detection latency and per-attack results for baseline vs ML
-vs combined, exposed at GET /metrics. Normalise each detector score to [0,1]
-by its percentile on held-out normal data.
-Build 4: evidence fusion as an executable rule table (unauthorised command +
-process change + twin residual => attack; single-sensor deviation with stable
-neighbours => sensor fault/spoof; process deviation with no network/command
-evidence => physical fault or model mismatch), time alignment of evidence,
+backend/incident/, backend/api/ and backend/db/ only. A threshold baseline detector, a
+placeholder incident manager (always "unknown"), the SQLite event log and the API
+already exist. Read detect/threshold.py, incident/manager.py and the tests first.
+Build 3: feature extraction (rolling statistics, rates of change, command frequency,
+sequence-number checks), an Isolation Forest trained on normal simulator data with a
+run-based train/test split (never random rows), physics-invariant checks (power balance
+import = load - PV - battery, breaker open implies zero feeder load, plausible
+frequency on a stiff grid), percentile score normalisation on held-out normal data, and
+an evaluation script reporting precision, recall, F1, false-positive rate, confusion
+matrix, detection latency and per-scenario results for baseline vs ML vs combined,
+exposed at GET /metrics. Benign scenarios must not produce false alarms.
+Build 4: evidence fusion as an executable rule table (unauthorised command + breaker
+mismatch + twin residual => attack; authorised command whose effect did not happen =>
+equipment fault; residual with no network or command evidence => physical fault or
+model mismatch; authorised and explained => no incident), time alignment of evidence,
 classification attack/fault/unknown with confidence and an uncertainty reason,
-template-based explanations that use only real alert fields (add a test that
-fails if any number in the text is not in the incident data), and propagation
-graph data with observed/correlated/inferred edges.
-Build 5: response recommendation, POST /incident/{id}/approve-response, GET
-/incidents/{id}/replay built from recorded events and timestamps, and the
-final evaluation numbers.
+template explanations that use only real incident fields (add a test that fails if any
+number in the text is not in the incident data), and propagation-graph data with
+observed/correlated/inferred edges.
+Build 5: response recommendation, replay endpoint options, and the final evaluation
+numbers.
 ```
 
-## 6. Integration checkpoints
+## 7. Integration checkpoints
 Each build ends with a 30-minute joint run on one machine: P2 and P3 start their backends, P1 points the frontend at the real WebSocket, and the build's acceptance check from the build plan is ticked off before merging to `main`.

@@ -1,13 +1,13 @@
 import Spark from "./Spark";
 import type { Telemetry, TwinState } from "../types";
 
-type Key = "pressure" | "flow" | "tank1_level" | "tank2_level";
+type Key = "frequency" | "bus_voltage" | "grid_import_kw" | "bess_soc";
 
 const ITEMS: { key: Key; label: string; unit: string; digits: number; domain: [number, number] }[] = [
-  { key: "pressure", label: "Line pressure", unit: "bar", digits: 2, domain: [0, 6] },
-  { key: "flow", label: "Flow rate", unit: "L/min", digits: 0, domain: [0, 140] },
-  { key: "tank1_level", label: "Tank 1 level", unit: "%", digits: 1, domain: [0, 100] },
-  { key: "tank2_level", label: "Tank 2 level", unit: "%", digits: 1, domain: [0, 100] },
+  { key: "frequency", label: "Grid frequency", unit: "Hz", digits: 2, domain: [49, 51] },
+  { key: "bus_voltage", label: "Bus voltage", unit: "pu", digits: 3, domain: [0.9, 1.1] },
+  { key: "grid_import_kw", label: "Utility import", unit: "kW", digits: 0, domain: [-200, 700] },
+  { key: "bess_soc", label: "Battery charge", unit: "%", digits: 1, domain: [0, 100] },
 ];
 
 /** Small square badge with an arrow: direction = which way the reading is off the twin, colour = within tolerance or not. */
