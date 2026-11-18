@@ -18,6 +18,9 @@ BLOCKED_PRESSURE_BAR = 4.8  # pump pushing against a closed valve
 BLOCKED_FLOW_LPM = 12.0
 TANK_CAPACITY_L = 600.0
 LAG = 0.35  # first-order response per second
+LEVEL_GAIN_LPM_PER_PCT = 8.0  # simple level regulation: inlet/outlet throttle as levels drift
+TANK1_SETPOINT = 62.0
+TANK2_SETPOINT = 48.0
 
 
 class Plant:
@@ -63,8 +66,12 @@ class Plant:
         self.flow += (target_flow - self.flow) * LAG
         self.pressure += (target_p - self.pressure) * LAG
 
-        out2 = NOMINAL_FLOW_LPM if (self.pump2 and self.tank2 > 2.0) else 0.0
-        self.tank1 += (RAW_INFLOW_LPM - self.flow) / 60.0 / TANK_CAPACITY_L * 100.0 * dt
+        # Raw inlet and Pump 2 outlet throttle with level, so levels recover after an upset.
+        inflow = max(0.0, RAW_INFLOW_LPM + LEVEL_GAIN_LPM_PER_PCT * (TANK1_SETPOINT - self.tank1))
+        out2 = 0.0
+        if self.pump2 and self.tank2 > 2.0:
+            out2 = max(0.0, NOMINAL_FLOW_LPM + LEVEL_GAIN_LPM_PER_PCT * (self.tank2 - TANK2_SETPOINT))
+        self.tank1 += (inflow - self.flow) / 60.0 / TANK_CAPACITY_L * 100.0 * dt
         self.tank2 += (self.flow - out2) / 60.0 / TANK_CAPACITY_L * 100.0 * dt
         self.tank1 = float(np.clip(self.tank1, 0.0, 100.0))
         self.tank2 = float(np.clip(self.tank2, 0.0, 100.0))

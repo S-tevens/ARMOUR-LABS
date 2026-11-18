@@ -93,3 +93,22 @@ def test_unknown_scenario_and_incident_404():
     with TestClient(app) as c:
         assert c.post("/scenario/start", json={"name": "nope"}).status_code == 404
         assert c.post("/incident/INC-999/approve-response").status_code == 404
+
+
+def test_no_second_incident_after_recovery_and_levels_return():
+    app = create_app(autostart=False)
+    rt = app.state.runtime
+    with TestClient(app) as c:
+        for _ in range(10):
+            rt.step()
+        c.post("/scenario/start", json={"name": "unauthorised_valve_close"})
+        for _ in range(30):
+            rt.step()
+        iid = c.get("/incidents").json()[0]["id"]
+        c.post(f"/incident/{iid}/approve-response")
+        for _ in range(300):
+            rt.step()
+        incs = c.get("/incidents").json()
+        assert len(incs) == 1 and incs[0]["status"] == "recovered"
+        t = rt.engine.plant
+        assert abs(t.tank1 - 62.0) < 3 and abs(t.tank2 - 48.0) < 3
