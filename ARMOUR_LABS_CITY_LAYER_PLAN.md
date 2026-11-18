@@ -1,8 +1,8 @@
-# ARMOUR LABS: City Layer Plan (Bengaluru-inspired)
+# ARMOUR LABS: City Layer Plan (Bengaluru)
 
 A second layer above the substation we already have. The city shows *where* and *how bad*; clicking a district drops into the substation view we built. It answers "so what?" for judges: not "a breaker opened" but "12 % of the city is dark and 3 hospitals are on backup".
 
-> **Fictional by design.** The city is Bengaluru-*inspired*: district names and facility types are real-sounding, but the network, loads and substations are invented. We never claim real BESCOM / KPTCL topology or real vulnerabilities. Say so in the UI (a small "Simulated, Bengaluru-inspired" label) and in the README.
+> **Real locations, simulated physics.** The map uses real Bengaluru substations, mapped lines, hospitals and metro stations from OpenStreetMap. OpenStreetMap does not map every line, so some ties are inferred (shown dashed), and all loads, ratings and attacks are simulated. We never claim this is BESCOM or KPTCL data or real vulnerabilities. The UI, README and contracts say so. (The first version of this plan used a fictional 8-district network; that network is now the test fixture.)
 
 ---
 
@@ -12,7 +12,7 @@ Built and tested (46 backend tests, frontend type-check and build): the city mod
 
 Not built yet: the restoration dry-run (P2.10), the city replay scrubber (P1.10), the campaign kill-chain timeline (P1.9), city evaluation metrics (P3.6), a city dataset generator (P2.11), the guided demo mode and the formal 5-second test with three viewers (P1.11), and the substation incident classification (still a placeholder; the city already has a rule table).
 
-Where this differs from the plan below: the city engine does not wrap a full substation per district for its flows. Each district is a distribution-level node with its own main breaker, and a full substation unit per district reacts to what the city does to it (islanding, demand), which keeps the physics simple and the drill-down real.
+Where this differs from the plan below: the city is no longer a fictional 8-district map. It is Bengaluru's real 220/400 kV substations, mapped line routes, hospitals and metro stations from OpenStreetMap on a real map (Leaflet), with the isometric view as the popup that opens when a substation is clicked, and the Network tab has an expandable interconnected graph with a domino replay. Where OpenStreetMap lacks a mapped line the tie is inferred and drawn dashed, and loads, ratings and attacks are simulated; this is stated in the UI, the README and the contracts. The small fictional network remains as a test fixture. Each substation is a distribution-level node with its own main breaker, and a full substation unit per node reacts to what the city does to it.
 
 ---
 

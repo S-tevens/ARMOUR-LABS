@@ -15,3 +15,7 @@ The source is the **custom simulator**, not a public dataset: label every result
 - `true_*` columns are ground truth for evaluation only. Detectors must not use them as inputs.
 - Split by run, never by random rows (see `suggested_split` in the manifest), so adjacent time windows do not leak between train and test.
 - Add a public dataset (BATADAL or HAI) alongside this for model credibility, and keep results labelled by source.
+
+## City grid data
+
+The Bengaluru grid lives in `backend/city/data/bengaluru_osm.json` and is built from OpenStreetMap (see the README, "Data sources and licence"). It is committed; the raw downloads (`backend/city/tools/raw/`) are not. Map data (c) OpenStreetMap contributors, ODbL.

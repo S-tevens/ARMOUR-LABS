@@ -6,10 +6,23 @@ export type FacilityStatus = "ok" | "backup" | "down";
 export type DistrictStatus = "ok" | "attention" | "dark" | "stale";
 export type LineStatus = "in_service" | "tripped" | "fault" | "open";
 
-export interface LayoutFacility { id: string; type: FacilityType; priority: number }
-export interface LayoutDistrict { id: string; name: string; x: number; y: number; population: number; facilities: LayoutFacility[] }
-export interface LayoutLine { id: string; from: string; to: string; capacity_mw: number; terminal: [number, number] | null }
-export interface CityLayout { name: string; note: string; featured: string; districts: LayoutDistrict[]; lines: LayoutLine[] }
+export interface LayoutFacility { id: string; type: FacilityType; priority: number; name?: string; lat?: number | null; lon?: number | null }
+export interface LayoutDistrict {
+  id: string; name: string; x: number; y: number; lat?: number | null; lon?: number | null; voltage_kv?: number | null;
+  entry?: boolean; population: number; base_load_mw?: number; facilities: LayoutFacility[];
+}
+export type LineSource = "osm" | "inferred" | "grid-entry";
+export interface LayoutLine {
+  id: string; from: string; to: string; capacity_mw: number; terminal: [number, number] | null;
+  voltage_kv?: number; source?: LineSource; path?: [number, number][];
+}
+export interface Feeder { name: string; lat: number; lon: number; voltage_kv: number; parent: string }
+export interface CityLayout {
+  name: string; note: string; featured: string; attribution?: string | null; data_note?: string | null;
+  center?: [number, number] | null; zoom?: number | null; feeders: Feeder[]; districts: LayoutDistrict[]; lines: LayoutLine[];
+}
+/** One step of the domino: the order in which things failed during an incident. */
+export interface Failure { n: number; t: number; kind: "line" | "district" | "facility"; id: string; text: string }
 
 export interface FacilityState { id: string; type: FacilityType; priority: number; status: FacilityStatus; backup_minutes_left: number }
 export interface DistrictState {
@@ -31,7 +44,7 @@ export interface CityState {
   status: "normal" | "attention" | "incident";
   incident_id: string | null; accelerated: boolean; featured: string;
   districts: DistrictState[]; lines: LineState[]; impact: Impact;
-  recovery: CityRecovery; actions: string[];
+  recovery: CityRecovery; actions: string[]; failures: Failure[];
 }
 
 export type CityMessage =

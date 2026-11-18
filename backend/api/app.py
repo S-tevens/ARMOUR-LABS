@@ -22,13 +22,14 @@ class ScenarioRequest(BaseModel):
     districts: list[str] | None = None  # city scenarios only
 
 
-def create_app(autostart: bool | None = None, db_path: str | None = None) -> FastAPI:
+def create_app(autostart: bool | None = None, db_path: str | None = None, city: str | None = None) -> FastAPI:
     if autostart is None:
         autostart = os.getenv("ARMOUR_AUTOSTART", "1") == "1"
     city = CityRuntime(
         seed=int(os.getenv("ARMOUR_SEED", "42")),
         tick_seconds=float(os.getenv("ARMOUR_TICK_SECONDS", "1.0")),
         featured_db=db_path or os.getenv("ARMOUR_DB", ":memory:"),
+        city=city,
     )
     runtime = city.featured_unit  # the original single-substation API works on this unit
 
@@ -146,7 +147,7 @@ def create_app(autostart: bool | None = None, db_path: str | None = None) -> Fas
 
     @app.post("/city/scenario/stop")
     def city_scenario_stop():
-        city.engine.stop_scenario()
+        city.reset()
         return {"active": None}
 
     @app.get("/city/incidents")

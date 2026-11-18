@@ -2,14 +2,14 @@
 
 The city layer sits above the substation layer ([contracts.md](contracts.md)). Sources of truth: `backend/city/` (model), `backend/api/city_runtime.py` (what is streamed), `backend/core/contracts.py` (the shared `Incident`), mirrored in `frontend/src/city/types.ts`. Changing a shape needs everyone's agreement and an update to all three places in one pull request.
 
-> **Fictional network.** Districts have real-sounding names (Whitefield, Koramangala and so on), but the topology, loads, populations and facilities are invented. Nothing here is real BESCOM or KPTCL data.
+> **Real topology, simulated physics.** The default grid is Bengaluru's, built from OpenStreetMap (substations, mapped line routes, hospitals, metro stations). Many ties are inferred because OpenStreetMap's line mapping is incomplete (shown dashed), and all loads, ratings, populations and attacks are simulated. It is not BESCOM or KPTCL data. The small fictional `synthetic.json` network is the test fixture; select it with `ARMOUR_CITY=synthetic`.
 
 ## Model
 
-- **Districts (8):** Yelahanka, Hebbal, Whitefield, City Centre, Indiranagar, Jayanagar, Koramangala, Electronic City. Each has a population, a base load (MW), a map position and facilities with a priority (hospital 1; water pumping, metro, airport 2; tech park 3).
-- **Network:** 13 lines with capacities (MW). Three lines (`L1`, `L2`, `L3`) come from the state grid, which is the power-flow slack.
+- **Nodes:** the 37 simulated nodes are the 220 kV and 400 kV substations from OpenStreetMap (ids such as `nimhans`, `hoodi`). Each has a population and a base load (MW, simulated from the 66 kV substations it would feed) and facilities with a priority (hospital 1; metro and airport 2). In the code and the API they are still called districts. The five 400 kV nodes are the grid entry points, fed from the state grid.
+- **Network:** 51 lines: 8 mapped in OpenStreetMap (`source: osm`, with the real route as a `path`), 38 inferred ties (`source: inferred`) and 5 grid-entry lines (`source: grid-entry`, from the state grid to each 400 kV node; the state grid is the power-flow slack). Ratings are simulated: `city/tools/build_osm_city.py` calibrates them so normal operation sits at 45-68 % loading and the demo scenarios behave sensibly.
 - **Power flow:** linear (DC). Each line's susceptance is proportional to its capacity, so equal loading percentages mean equal angle differences. A line whose loading stays above 110 % for 6 s trips (above 140 % it trips at once). At most one line trips per tick, so a cascade unfolds visibly. Districts cut off from the grid go dark.
-- **Each district's substation is a full substation unit** (the model in `contracts.md`) with sizes scaled for that district. When the city cuts a district off, its substation islands; when the city raises demand, its loads rise. The featured district is `kr` (Koramangala).
+- **Each substation is a full substation unit** (the model in `contracts.md`) with sizes scaled for that district. When the city cuts a district off, its substation islands; when the city raises demand, its loads rise. The featured substation is `nimhans`.
 - **Frequency:** a simple load-rejection model, 50 Hz plus 2 Hz times the fraction of load lost, with a lag. It is a display signal, not a stability model.
 - **Accelerated time:** impact accounting and hospital backup run at 1 simulated minute per second (`MINUTES_PER_TICK`). A hospital has 90 minutes of backup, so it lasts 90 s in a demo. The UI says so.
 
@@ -38,7 +38,14 @@ Envelopes `{type, data}`, one `city` message per tick:
 | `city_event` | NetworkEvent (unauthorised events and authorised commands; routine heartbeats are not sent) |
 
 ### Layout (`/city` → `layout`)
-`{name, note, featured, districts:[{id, name, x, y, population, facilities:[{id, type, priority}]}], lines:[{id, from, to, capacity_mw, terminal}]}`. `from` is `GRID` for the three feed lines; `terminal` is the map position of the grid end.
+```text
+name, note, data_note, attribution, center, zoom, featured
+feeders[]:   name, lat, lon, voltage_kv, parent        # the 66 kV substations, shown as context
+districts[]: id, name, lat, lon, voltage_kv, entry, population, base_load_mw,
+             facilities[]: id, type, priority, name, lat, lon
+lines[]:     id, from, to, capacity_mw, voltage_kv, source (osm | inferred | grid-entry), path[[lat, lon], ...]
+```
+`from` is `GRID` for the grid-entry lines. `path` is the real mapped route for `osm` lines. (The synthetic fixture uses `x`, `y` and `terminal` instead of coordinates.)
 
 ### CityState
 ```text
@@ -52,6 +59,7 @@ impact:      people_unserved, hospitals_on_backup, hospitals_down, critical_site
 recovery:    state (idle | recovering | recovered | unresolved), elapsed, seconds_in_range, dwell,
              checks[]: name, ok, detail
 actions[]:   the latest containment actions (plain sentences)
+failures[]:  the order things failed in this incident (the domino): n, t, kind (line | district | facility), id, text
 twin, scores: summaries for debugging (max_norm_residual, topology and district mismatch; the four scores)
 ```
 `attention` on a district means an adjacent line is above 90 % loading. `stale` means the control centre has lost sight of it. A line is `open` when an authorised command opened it (planned work), `tripped` when protection did, `fault` after an equipment fault.
@@ -63,12 +71,12 @@ twin, scores: summaries for debugging (max_norm_residual, topology and district 
 
 | name | kind | what it does |
 |---|---|---|
-| `coordinated_substation_trip` | attack | opens the main breakers of three districts (Indiranagar, Koramangala, Jayanagar by default); also reaches each district's own substation |
+| `coordinated_substation_trip` | attack | opens the breakers of three central substations with hospitals (`scenario_defaults.trip_districts`: East Division Compound, A Station, NIMHANS); also reaches each substation's own unit |
 | `load_altering_attack` | attack | compromised chargers and smart devices push city demand up 75 %; lines overload and trip in a cascade |
-| `comms_loss` | attack | a message flood blinds the control centre to one district; no physical change |
-| `planned_maintenance` | benign | SCADA opens line L5 (authorised); power reroutes |
+| `comms_loss` | attack | a message flood blinds the control centre to one substation (default Puttenahalli); no physical change |
+| `planned_maintenance` | benign | SCADA opens a transmission line (`maintenance_line`, authorised); power reroutes |
 | `evening_peak` | benign | demand rises 25 % on the schedule the twin knows about |
-| `line_fault` | fault | line L6 trips on a fault; power reroutes |
+| `line_fault` | fault | a transmission line (`fault_line`) trips on a fault; power reroutes |
 
 ## City twin
 `backend/city/twin.py`. Expected city behaviour from the **authorised command log** (district-breaker and line commands) and the **scheduled demand forecast** only. It has its own demand model (a slightly different ripple), and a test proves its expectations do not change when the observed topology changes. Residuals: per-line flow residuals (scaled to 6 % of capacity), `topology_mismatch` (lines out that were not commanded out) and `district_mismatch` (districts dark that were not commanded dark).
@@ -93,3 +101,8 @@ Confidence values are heuristic labels for the rule table, not calibrated probab
 5. **Re-energise** districts one at a time, hospital districts first, only if doing so would not overload a line; otherwise hold the district and retry.
 
 Every step is an authorised SCADA command (so it appears in the command log and the twin follows it). Recovery is verified by `backend/city/recovery.py`: every district energised, every line in service (except lines opened by an authorised command), no line above 90 % loading, every hospital on grid power, frequency within 49.9-50.1 Hz, all held for 10 s. `unresolved` after 150 s.
+
+## Scenario defaults and the domino record
+Scenario defaults live in the layout file (`scenario_defaults`: `trip_districts`, `stale_districts`, `fault_line`, `maintenance_line`) and are chosen by the build script, which also verifies that normal operation, the evening peak, the maintenance and the fault cause no blackout, that the coordinated trip darkens exactly the three configured substations, and that the load-altering attack cascades and is restored.
+
+`failures` in the state records, per incident, the order in which things failed: a line tripping by protection, a substation losing power, a hospital switching to backup or running out of it. It resets when a scenario starts or stops. The Network tab's expanded graph replays it step by step. Every step is something that actually failed in the simulation.

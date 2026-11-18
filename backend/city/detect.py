@@ -25,6 +25,9 @@ class CityDetector:
     def __init__(self) -> None:
         self.recent: deque[NetworkEvent] = deque()  # unauthorised events in the window
 
+    def reset(self) -> None:
+        self.recent.clear()
+
     def score(self, st: dict, twin: TwinState, events: list[NetworkEvent]) -> Scores:
         for e in events:
             if not e.authorised:
@@ -58,6 +61,12 @@ class CityIncidentManager:
         self.incidents: dict[str, Incident] = {}
         self._counter = 0
         self._seen: dict[str, dict[int, NetworkEvent]] = {}  # incident id -> unauthorised events it has seen
+
+    def reset(self) -> None:
+        """A hard reset starts from a clean slate: no incidents, no remembered evidence."""
+        self.incidents.clear()
+        self._seen.clear()
+        self._counter = 0
 
     def active(self) -> Incident | None:
         for inc in self.incidents.values():

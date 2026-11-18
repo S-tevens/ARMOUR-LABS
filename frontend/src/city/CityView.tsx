@@ -1,9 +1,10 @@
 import { useState } from "react";
 import SimulatorCard from "../components/SimulatorCard";
 import type { Incident } from "../types";
-import CityMap from "./CityMap";
+import CityRealMap from "./CityRealMap";
 import DistrictCard from "./DistrictCard";
 import ImpactStrip from "./ImpactStrip";
+import LocalGrid from "./LocalGrid";
 import ResponseCard from "./ResponseCard";
 import type { CityScenarioInfo } from "./types";
 import type { CityStream } from "./useCityStream";
@@ -24,18 +25,21 @@ export default function CityView({
   const { layout, state } = stream;
   const [selected, setSelected] = useState<string | null>(null);
   if (!layout || !state) {
-    return <p className="empty">{stream.connected ? "Loading the city…" : "Waiting for the backend…"}</p>;
+    return <p className="empty">{stream.connected ? "Loading the grid…" : "Waiting for the backend…"}</p>;
   }
   const incidents = Object.values(stream.incidents).sort((a, b) => b.t_start - a.t_start);
   const active: Incident | undefined = incidents.find((i) => i.status === "open" || i.status === "recovering");
   const sel = state.districts.find((d) => d.id === selected);
+  const selLayout = layout.districts.find((d) => d.id === selected);
 
   return (
     <main className="cityview">
       <section className="pagehead">
         <div className="page-title">
-          <h1>{layout.name.replace(" (fictional network)", "")}</h1>
-          <span className="muted small">{layout.note.split(".")[0]}. Backup time and energy run accelerated, 1 s is 1 min.</span>
+          <h1>{layout.name}</h1>
+          <span className="muted small" title={layout.data_note ?? undefined}>
+            Real substations and line routes from OpenStreetMap. Loads and attacks are simulated. Backup time and energy run accelerated, 1 s is 1 min.
+          </span>
         </div>
         <ImpactStrip layout={layout} state={state} unserved={stream.unserved} energy={stream.energy} />
       </section>
@@ -43,26 +47,28 @@ export default function CityView({
       <div className="citystage">
         <WhatsHappening state={state} incident={active} onSelect={setSelected} />
 
-        <section className={`mapwrap ${state.status === "incident" ? "alarm" : ""}`} aria-label="City map">
-          <CityMap layout={layout} state={state} selected={selected} onSelect={setSelected} />
+        <section className={`mapwrap real ${state.status === "incident" ? "alarm" : ""}`} aria-label="City map">
+          <CityRealMap layout={layout} state={state} selected={selected} onSelect={setSelected} />
           {active && (
             <div className="alert glass" role="alert">
               <b>{CAUSE[active.classification]}</b>
               {active.campaign_id && <span className="pill neutral">Campaign</span>}
               {active.status === "open" && <button className="btn primary" onClick={() => onApprove(active.id)}>Approve containment</button>}
-              {active.status === "recovering" && <span className="muted">Restoring the city…</span>}
+              {active.status === "recovering" && <span className="muted">Restoring the grid…</span>}
             </div>
           )}
           <ul className="legend-map" aria-label="Legend">
             <li><i className="dot green" /> Supplied</li>
             <li><i className="dot amber" /> Needs attention</li>
             <li><i className="dot red" /> Without power</li>
-            <li><i className="flowkey" /> Power flow</li>
+            <li><i className="ln solid" /> Mapped line</li>
+            <li><i className="ln dashed" /> Inferred tie</li>
           </ul>
+          {selected && <LocalGrid layout={layout} state={state} id={selected} onClose={() => setSelected(null)} onOpen={onOpenSubstation} />}
         </section>
 
         <div className="cityside">
-          <DistrictCard d={sel} onOpen={onOpenSubstation} />
+          <DistrictCard d={sel} lay={selLayout} onOpen={onOpenSubstation} />
           <ResponseCard s={state} />
           <SimulatorCard title="City simulator" scenarios={scenarios} onStart={onStart} onStop={onStop} />
         </div>

@@ -308,3 +308,80 @@ tr.row-bad td { background: rgba(229, 72, 77, 0.06); }
 @media (max-width: 800px) {
   .citystage { grid-template-columns: 1fr; }
 }
+
+/* ---------------- real map, local grid popup, grid graph ---------------- */
+.mapwrap.real { height: 660px; min-height: 0; padding: 0; background: #eef1f5; display: block; }
+.mapwrap.real::before { z-index: 450; }
+.realmap { position: absolute; inset: 0; border-radius: var(--r-lg); background: #eef1f5; font-family: inherit; }
+.realmap .leaflet-control-attribution { font-size: 10px; background: rgba(255, 255, 255, 0.75); }
+.realmap .leaflet-bar a { color: var(--slate); }
+.leaflet-container { font-family: inherit; }
+.leaflet-tooltip.map-tip { background: rgba(255, 255, 255, 0.95); border: 1px solid var(--frost-edge); border-radius: 10px; color: var(--ink); font-size: 12px; box-shadow: var(--shadow); padding: 5px 9px; }
+.leaflet-tooltip.map-tip::before { display: none; }
+.leaflet-tooltip.map-label { background: rgba(255, 255, 255, 0.92); border: 0; border-radius: 999px; color: var(--ink); font-size: 11.5px; font-weight: 600; box-shadow: 0 4px 10px -4px rgba(52, 78, 140, 0.45); padding: 3px 9px; }
+.leaflet-tooltip.map-label::before { display: none; }
+.map-flow { animation: mapflow linear infinite; }
+.map-flow.rev { animation-direction: reverse; }
+@keyframes mapflow { to { stroke-dashoffset: -14; } }
+.node-dark { animation: pulse 1.2s infinite; }
+.fac-icon span { display: flex; align-items: center; justify-content: center; width: 18px; height: 18px; border-radius: 50%; background: #fff; border: 2px solid #c3cde3; font-size: 10px; font-weight: 800; color: var(--slate); box-shadow: 0 2px 6px -2px rgba(52, 78, 140, 0.5); }
+.fac-icon.hospital span { color: var(--red); }
+.fac-icon.st-backup span { border-color: var(--amber); }
+.fac-icon.st-down span { border-color: var(--red); background: #ffe4e5; }
+.mapwrap.real .alert { top: 14px; z-index: 900; }
+.mapwrap.real .legend-map { position: absolute; z-index: 900; left: 12px; bottom: 24px; right: auto; top: auto; flex-wrap: wrap; max-width: 62%; }
+.ln { display: inline-block; width: 20px; height: 0; border-top: 3px solid #6f8bc4; vertical-align: middle; }
+.ln.dashed { border-top: 3px dashed #aebbd8; }
+
+.localgrid { position: absolute; z-index: 1100; right: 14px; bottom: 28px; width: min(540px, 58%); padding: 14px 16px 12px; display: flex; flex-direction: column; gap: 6px; max-height: calc(100% - 90px); overflow: hidden; }
+.localgrid header { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.localgrid h2 { font-size: 16px; }
+.localgrid .x { border: 0; background: transparent; font-size: 22px; line-height: 1; color: var(--slate); cursor: pointer; padding: 0 4px; }
+.localgrid .x:hover { color: var(--ink); }
+.localgrid .citymap { max-height: 340px; }
+.localgrid footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+.state-line.suspicious { color: #c98310; }
+
+.ggpanel { padding: 18px 20px; }
+.ggpanel .panel-head > div { display: flex; flex-direction: column; gap: 3px; }
+.btn.expand { display: inline-flex; align-items: center; gap: 8px; }
+.ggraph { width: 100%; height: auto; display: block; }
+.ggraph.big { max-height: calc(100vh - 220px); }
+.gnode { cursor: pointer; outline: none; }
+.gnode:focus-visible circle:first-of-type { stroke: var(--blue); stroke-width: 3; }
+.gnode .pulse { animation: pulse 1.2s infinite; }
+.gg-label { font-size: 11px; font-weight: 600; fill: var(--ink); paint-order: stroke; stroke: #fff; stroke-width: 3.5px; stroke-linejoin: round; pointer-events: none; }
+.gg-label.bad { fill: #b52a2f; }
+.gg-label.muted { fill: var(--slate); font-weight: 500; font-size: 10px; }
+.gg-glyph { font-size: 7.5px; font-weight: 800; fill: var(--slate); pointer-events: none; }
+.gg-glyph.hospital { fill: var(--red); }
+.chain { stroke: var(--red); stroke-width: 2; stroke-dasharray: 2 5; stroke-linecap: round; opacity: 0.55; }
+.badge-n circle { fill: var(--red); stroke: #fff; stroke-width: 2; }
+.badge-n text { fill: #fff; font-size: 10px; font-weight: 700; pointer-events: none; }
+.gg-legend { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 10px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--slate); }
+.gg-legend li { display: flex; align-items: center; gap: 6px; }
+.gg-glyph-key { display: inline-flex; width: 15px; height: 15px; border-radius: 50%; border: 2px solid #c3cde3; align-items: center; justify-content: center; font-size: 8px; font-weight: 800; color: var(--slate); margin-left: 4px; }
+.gg-glyph-key.hospital { color: var(--red); margin-left: 0; }
+.ggnote { margin: 8px 0 0; }
+
+.gg-modal { position: fixed; inset: 0; z-index: 2000; background: rgba(26, 35, 64, 0.35); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+.gg-sheet { width: min(1380px, 100%); max-height: 100%; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; overflow: hidden; background: rgba(250, 251, 254, 0.96); }
+.gg-sheet .panel-head > div { display: flex; flex-direction: column; gap: 3px; }
+.gg-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; min-height: 0; overflow: auto; }
+.gg-side { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+.gg-controls { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+.gg-controls input[type="range"] { width: 100%; accent-color: var(--blue); }
+.gg-seq { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; max-height: 340px; overflow: auto; }
+.gg-seq li button { display: grid; grid-template-columns: 24px 1fr; gap: 10px; align-items: start; width: 100%; text-align: left; border: 0; background: transparent; padding: 7px 8px; border-radius: 10px; font: inherit; font-size: 13px; color: var(--slate); cursor: pointer; }
+.gg-seq li.on button { color: var(--ink); background: rgba(229, 72, 77, 0.07); }
+.gg-seq li b { display: inline-flex; width: 20px; height: 20px; border-radius: 50%; background: #d9e0ee; color: #fff; font-size: 11px; align-items: center; justify-content: center; }
+.gg-seq li.on b { background: var(--red); }
+.gg-prov { margin-top: auto; }
+@media (max-width: 1000px) {
+  .mapwrap.real { height: 520px; }
+  .localgrid { width: calc(100% - 28px); right: 14px; bottom: 14px; }
+  .gg-body { grid-template-columns: 1fr; }
+}
+
+/* pale basemap: desaturate and lighten the OpenStreetMap tiles so the live overlay stands out */
+.realmap .leaflet-tile-pane { filter: grayscale(0.9) brightness(1.1) contrast(0.82); opacity: 0.9; }

@@ -244,3 +244,24 @@ def test_city_api_end_to_end():
         assert c.get("/incidents", params={"district": "nope"}).status_code == 404
         assert c.post("/city/scenario/start", json={"name": "nope"}).status_code == 404
         assert c.post("/city/scenario/start", json={"name": "comms_loss", "districts": ["zz"]}).status_code == 422
+
+
+def test_stop_and_reset_gives_a_clean_slate_for_the_next_incident():
+    c = city_warm()
+    c.engine.start_scenario("load_altering_attack")
+    run_until(c, lambda: bool(c.incidents.incidents), 5)
+    for _ in range(8):
+        c.step()
+    assert any("EV-GATEWAY" in e.text for e in next(iter(c.incidents.incidents.values())).evidence)
+    c.reset()
+    assert c.incidents.incidents == {} and c.last_report.state == "idle" and c.engine.containment_log == []
+    for _ in range(15):
+        c.step()
+    c.engine.start_scenario("coordinated_substation_trip")
+    run_until(c, lambda: bool(c.incidents.incidents), 5)
+    for _ in range(5):
+        c.step()
+    inc = next(iter(c.incidents.incidents.values()))
+    assert inc.id == "CIT-001"
+    assert not any("EV-GATEWAY" in e.text for e in inc.evidence)  # nothing left over from the previous incident
+    assert inc.classification == "attack" and inc.campaign_id == "CMP-001"

@@ -8,7 +8,7 @@ ARMOUR LABS protects a **campus microgrid substation**: a utility feed, solar ar
 
 Unlike an intrusion-detection dashboard that only lists alerts, ARMOUR LABS connects a cyber event to its physical consequence: "someone opened the hospital's breaker" becomes "the hospital feeder is de-energised, the battery is absorbing the lost load, and the command did not come from SCADA".
 
-**It scales from one substation to a city.** The **City** view is a Bengaluru-inspired network of 8 districts (a fictional network, not real utility data). It shows where a cyberattack hits, how bad it is in plain terms (people without power, hospitals on backup), how a failure cascades through the grid, and how power is restored hospitals first. Click any district to drop into its detailed substation.
+**It scales from one substation to a whole city grid.** The **City** tab is a real map of Bengaluru built from OpenStreetMap: the real 220 kV and 400 kV substations (Hoodi, Yelahanka, Peenya, NIMHANS, HSR Layout and 30 more), the mapped line routes between them, and the hospitals and Namma Metro stations they would supply. Click a substation and an isometric view of its local grid opens; click again to drop into its detailed microgrid. The **Network** tab shows the whole grid as an interconnected graph with an expand view that replays, step by step, how a failure spreads (the domino effect). **This is not utility data**: where OpenStreetMap has no mapped line the connection is inferred and drawn dashed, and all loads, ratings and attacks are simulated. See [Data sources and licence](#data-sources-and-licence).
 
 **Everything runs in simulation.** The substation, the network and every attack scenario exist only inside an isolated software simulation. Nothing connects to real relays, grids or external systems.
 
@@ -28,7 +28,8 @@ This is the base project: a working end-to-end system you can run today.
 | Model-based, independent digital twin (authorised command log as its only command input) | Working (v0: hand-set parameters, to be fitted and tuned) |
 | FastAPI backend with a WebSocket stream and an append-only SQLite event log | Working |
 | Live dashboard (isometric substation, relays, twin chart, detector scores, network graph, incidents) | Working |
-| **City layer:** 8-district fictional network, linear power flow, line overloads and cascades, facilities with hospital backup timers, impact counters, 6 city scenarios, priority restoration, city twin, rule-based classification and campaign grouping, recovery verification | Working |
+| **City layer:** real Bengaluru substations, mapped line routes, hospitals and metro from OpenStreetMap on a real map; linear power flow, line overloads and cascades, hospital backup timers, impact counters, 6 city scenarios, priority restoration, city twin, rule-based classification and campaign grouping, recovery verification | Working |
+| **Grid graph and domino replay** (Network tab, expandable) | Working |
 | Threshold baseline detector | Working (baseline only) |
 | Incident classification (attack, fault, unknown) | City: rule-based v0 (executable rule table). Substation: placeholder, always "unknown" |
 | ML detector (Isolation Forest), physics checks, evidence fusion, evaluation and `/metrics` | Not built yet |
@@ -101,7 +102,7 @@ Open **http://localhost:5173** in your browser. The status pill at the top right
 
 ### 5. Try the demo
 
-**Start with the City tab.** In the **City simulator** card, run **Coordinated substation trip**. Within seconds the status turns red: three districts go dark with red outlines, the headline strip shows how many people are without power and how many hospitals are on backup, and "What's happening" lists the likely cause and the most urgent consequences in plain sentences. Click **Approve containment**: the source is blocked and districts are restored hospitals first, with a live checklist; the city is marked **Recovered** only after every check holds for 10 seconds. Also try **Load-altering attack**, which overloads lines and cascades into a wider blackout that is restored in stages. The look-alikes (**Planned line maintenance**, **Hot-evening demand peak**) raise no incident, and **Line fault** is classified as equipment, not an attack. Backup time and energy run accelerated (1 second is 1 minute).
+**Start with the City tab.** You see a real map of Bengaluru with the grid on top (green dots are substations, solid lines are mapped power lines, dashed lines are inferred ties). In the **City simulator** card, run **Coordinated substation trip**. Within seconds the status turns red: three central substations go dark with a red marker, the headline strip shows how many people are without power and how many hospitals are on backup, and "What's happening" lists the likely cause and the most urgent consequences in plain sentences. **Click a dark substation**: an isometric view of its local grid opens on the map, and the side card lists what it supplies. Click **Approve containment**: the source is blocked and substations are restored hospitals first, with a live checklist; the grid is marked **Recovered** only after every check holds for 10 seconds. Then try **Load-altering attack**: demand surges, one overloaded line trips, and a chain of substations in the west of the city goes dark (a cascade). Open the **Network** tab, press **Expand**, and use **Replay** or the slider to watch the failure spread one step at a time. The look-alikes (**Planned line maintenance**, **Hot-evening demand peak**) raise no incident, and **Line fault** is classified as equipment, not an attack. Backup time and energy run accelerated (1 second is 1 minute).
 
 **Then drill down.** Click a district and choose **Open substation view** for its detailed microgrid:
 
@@ -130,7 +131,7 @@ Press `Ctrl+C` in each terminal.
 
 ```bash
 cd backend
-python -m pytest            # backend: 46 tests
+python -m pytest            # backend: 55 tests
 cd ../frontend
 npm run build               # frontend: type-check and production build
 ```
@@ -156,6 +157,7 @@ Set these environment variables before starting the backend (all optional):
 | `ARMOUR_TICK_SECONDS` | `1.0` | Real seconds per simulated second. Use `0.2` for a faster demo. |
 | `ARMOUR_DB` | in memory | Path of an SQLite file, to keep the event log between restarts. |
 | `ARMOUR_AUTOSTART` | `1` | Set `0` to stop the simulation starting by itself (used by tests). |
+| `ARMOUR_CITY` | `osm` | Grid layout: `osm` (real Bengaluru topology) or `synthetic` (small fictional test network). |
 
 For the frontend, `VITE_API_URL` (default `http://localhost:8000`) points the dashboard at a backend on another address.
 
@@ -172,6 +174,7 @@ Example (macOS/Linux): `ARMOUR_TICK_SECONDS=0.5 uvicorn main:app --port 8000`
 | `Address already in use` on port 8000 or 5173 | Another program is using it. Stop it, or pick another port: `uvicorn main:app --port 8001` and `VITE_API_URL=http://localhost:8001` for the frontend. |
 | `ModuleNotFoundError` when starting the backend | Run `uvicorn` from inside the `backend/` folder with the virtual environment active. |
 | Frontend shows old data after a code change | Hard refresh the page (`Ctrl+Shift+R`). |
+| The map shows no streets, only the grid | The basemap tiles load from OpenStreetMap's servers, so they need internet. The grid overlay and everything else work offline. |
 | You started a scenario and the substation looks stuck | Click **Stop and reset**. |
 
 ---
@@ -241,6 +244,8 @@ backend/
   db/                 append-only SQLite event log
   api/                FastAPI app, WebSocket stream, runtime
   city/               city model: layout, power flow, engine, scenarios, containment, recovery, twin, detection
+  city/data/          bengaluru_osm.json (real topology, simulated electrical model) and synthetic.json (test fixture)
+  city/tools/         fetch_osm.py and build_osm_city.py: rebuild the grid data from OpenStreetMap
   tests/              backend tests
 frontend/             React + TypeScript dashboard (src/city/ is the city view)
 data/                 dataset notes (generated files are not committed)
@@ -255,6 +260,28 @@ docs/contracts.md     message and API contracts
 - [ARMOUR_LABS_MVP_BUILD_PLAN.md](ARMOUR_LABS_MVP_BUILD_PLAN.md): builds, acceptance checks and risks.
 - [ARMOUR_LABS_TASK_DISTRIBUTION.md](ARMOUR_LABS_TASK_DISTRIBUTION.md): who builds what.
 - [CONTRIBUTING.md](CONTRIBUTING.md): workflow, folder ownership and rules.
+
+## Data sources and licence
+
+**What is real, what is inferred, what is simulated.** The Bengaluru grid is a hybrid, and the interface says so:
+
+| | What | Source |
+|---|---|---|
+| Real | 37 substation locations, names and voltage levels (220 kV and 400 kV, including the five 400 kV entry points); 54 further 66 kV substations shown as context; mapped 220/400 kV line routes; 30 larger hospitals; 87 Namma Metro stations; Kempegowda Airport (added by hand) | OpenStreetMap |
+| Inferred | Most links between substations: OpenStreetMap maps only 8 of the 46 ties, so the rest are inferred from the voltage hierarchy and proximity (each substation gets at least two ties, separate pieces are joined). Shown dashed. The real topology is not public | This project |
+| Simulated | Loads (from the number of mapped 66 kV substations each node would feed), populations, line ratings (calibrated so normal operation sits at 45-68 % loading), which hospital or metro station a substation supplies (by proximity), and every attack | This project |
+
+Nothing here is BESCOM or KPTCL data, and the simulated outages are hypothetical.
+
+**Licence and attribution.** Map data (c) OpenStreetMap contributors, available under the [Open Database Licence (ODbL)](https://www.openstreetmap.org/copyright). `backend/city/data/bengaluru_osm.json` is a derived database: keep the attribution, and if you redistribute an adapted version, share it under the same licence. The basemap tiles come from the public OpenStreetMap tile servers, which are fine for a demo but not for heavy use; for production, host your own tiles or use a tile provider.
+
+**Rebuild the data** (needs internet; the result is committed, so the app never needs this):
+
+```bash
+cd backend
+python -m city.tools.fetch_osm        # downloads the raw OpenStreetMap data (be patient: the public servers are often busy)
+python -m city.tools.build_osm_city   # builds city/data/bengaluru_osm.json and tunes the simulated ratings
+```
 
 ## Evaluation approach
 

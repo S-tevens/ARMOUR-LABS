@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { approveResponse, getScenarios, startScenario, stopScenario } from "./api";
 import { approveCityResponse, getCityScenarios, startCityScenario, stopCityScenario } from "./city/api";
 import CityView from "./city/CityView";
+import GridGraphPanel from "./city/GridGraph";
 import type { CityScenarioInfo } from "./city/types";
 import { useCityStream } from "./city/useCityStream";
 import ControllerRail from "./components/ControllerRail";
@@ -176,7 +177,13 @@ export default function App() {
 
       {tab === "network" && (
         <main className="stack">
+          {city.layout && city.state ? (
+            <GridGraphPanel layout={city.layout} state={city.state} onOpenSubstation={openSubstation} />
+          ) : (
+            <p className="empty">Loading the grid graph…</p>
+          )}
           <Breadcrumb />
+          <h2 className="section-title">{districtName} substation: control network</h2>
           <NetworkGraph t={t} links={s.links} />
           <EventTable events={s.events} />
         </main>
