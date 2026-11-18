@@ -303,7 +303,9 @@ Accuracy alone is not reported. The Metrics tab shows precision, recall, F1, fal
 
 ## Research inspiration
 
-*Machine Learning-Based Detection of Anomalies, Intrusions, and Threats in Industrial Control Systems*, IEEE Access, 2025. Any results reported by the paper are not results achieved by this project.
+D. Benka, D. Horváth, L. Špendla, G. Gašpar and M. Strémy, *Machine Learning-Based Detection of Anomalies, Intrusions, and Threats in Industrial Control Systems*, IEEE Access, vol. 13, pp. 12502-12514, 2025, DOI [10.1109/ACCESS.2025.3530902](https://doi.org/10.1109/ACCESS.2025.3530902). A copy is in [docs/research/](docs/research/benka-2025-ml-anomaly-detection-ics.pdf) (licensed CC BY 4.0, as stated in the paper).
+
+We took the framing (ML anomaly detection on ICS communication, lateral attacks on PLCs), the attack types (replay, unauthorised commands and data changes, floods), the Isolation Forest and SVM model families, and the use of precision, recall and F1. We did not use its CNN or LSTM, its dataset or its hardware. Any results reported by the paper are not results achieved by this project, and the numbers are not comparable (different data, attacks and test sizes).
 
 ## Team
 

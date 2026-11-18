@@ -26,7 +26,7 @@ Unlike a conventional intrusion-detection dashboard that primarily displays aler
 
 The project takes inspiration from:
 
-**"Machine Learning-Based Detection of Anomalies, Intrusions, and Threats in Industrial Control Systems" — IEEE Access, 2025.** *(TODO: add authors and DOI before submission.)*
+**"Machine Learning-Based Detection of Anomalies, Intrusions, and Threats in Industrial Control Systems" — IEEE Access, vol. 13, pp. 12502-12514, 2025.** D. Benka, D. Horváth, L. Špendla, G. Gašpar, M. Strémy. DOI: 10.1109/ACCESS.2025.3530902.
 
 The paper explores machine-learning approaches such as CNN, LSTM, SVM, and Isolation Forest for detecting anomalies and threats in industrial control systems. ARMOUR LABS uses this research direction as a foundation and extends the concept with a simulated grid digital twin, cross-layer event correlation, visual incident investigation, and recovery verification.
 
