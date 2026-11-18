@@ -12,7 +12,7 @@ export default function SimulatorCard({
   return (
     <section className="sim glass" aria-label="Attack simulator">
       <h2>Simulator</h2>
-      <p className="hint">Runs inside the simulation only.</p>
+      <p className="hint">Runs inside the simulation only. Red: attack. Amber: fault. Green: legitimate change.</p>
       <div className="sim-buttons">
         {scenarios.map((s) => (
           <button key={s.name} className={`btn ${s.kind}`} title={s.description} onClick={() => onStart(s.name)}>

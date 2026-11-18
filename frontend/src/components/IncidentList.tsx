@@ -1,7 +1,7 @@
 import type { Incident } from "../types";
 
 const STEPS: Incident["status"][] = ["open", "recovering", "recovered"];
-const STEP_LABEL: Record<string, string> = { open: "Detected", recovering: "Recovering", recovered: "Recovered" };
+const STEP_LABEL: Record<string, string> = { open: "Detected", recovering: "Recovering", recovered: "Recovered", unresolved: "Unresolved" };
 
 export default function IncidentList({ incidents, onApprove }: { incidents: Incident[]; onApprove: (id: string) => void }) {
   if (incidents.length === 0) {
@@ -15,7 +15,8 @@ export default function IncidentList({ incidents, onApprove }: { incidents: Inci
   return (
     <section className="incidents-wrap">
       {incidents.map((i) => {
-        const at = Math.max(0, STEPS.indexOf(i.status));
+        const steps = i.status === "unresolved" ? ["open", "recovering", "unresolved"] : STEPS;
+        const at = Math.max(0, steps.indexOf(i.status));
         return (
           <article key={i.id} className={`glass incident ${i.status}`}>
             <header>
@@ -28,8 +29,8 @@ export default function IncidentList({ incidents, onApprove }: { incidents: Inci
               )}
             </header>
             <ol className="steps" aria-label="Incident progress">
-              {STEPS.map((s, k) => (
-                <li key={s} className={k < at ? "done" : k === at ? "now" : ""}>{STEP_LABEL[s]}</li>
+              {steps.map((s, k) => (
+                <li key={s} className={k < at ? "done" : k === at ? `now ${s}` : ""}>{STEP_LABEL[s]}</li>
               ))}
             </ol>
             <ul className="evidence">

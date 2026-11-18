@@ -80,6 +80,10 @@ def create_app(autostart: bool | None = None, db_path: str | None = None) -> Fas
             raise HTTPException(404, "unknown incident")
         return runtime.store.query(t_from=max(0.0, inc.t_start - 10.0))
 
+    @app.get("/recovery")
+    def recovery():
+        return runtime.recovery()
+
     @app.get("/metrics")
     def metrics():
         # TODO (P3): precision/recall/F1/FPR/latency from the evaluation script.

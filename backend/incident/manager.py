@@ -3,21 +3,21 @@
 PLACEHOLDER: opens one incident when an alert fires and always classifies it as
 "unknown". The real evidence fusion (attack vs fault vs unknown, with uncertainty)
 goes here. Evidence text must only use real measured fields.
+
+Recovery status comes from sim.recovery.RecoveryVerifier, never from the alert going quiet.
 """
 from __future__ import annotations
 
 from core.contracts import Evidence, Incident, NetworkEvent, Scores, Telemetry, TwinState
-
-# Recovery check (placeholder): all within tolerance for DWELL_TICKS consecutive ticks.
-TOLERANCE = {"pressure": (1.8, 2.5), "flow": (95.0, 125.0)}
-DWELL_TICKS = 10
+from sim.recovery import RecoveryReport, RecoveryVerifier
 
 
 class IncidentManager:
     def __init__(self) -> None:
         self.incidents: dict[str, Incident] = {}
         self._counter = 0
-        self._ok_ticks = 0
+        self.verifier = RecoveryVerifier()
+        self.last_report: RecoveryReport = RecoveryReport(state="idle")
 
     def active(self) -> Incident | None:
         for inc in self.incidents.values():
@@ -60,15 +60,18 @@ class IncidentManager:
             return inc
 
         if inc.status == "recovering":
-            ok = all(lo <= getattr(obs, k) <= hi for k, (lo, hi) in TOLERANCE.items())
-            self._ok_ticks = self._ok_ticks + 1 if ok else 0
-            if self._ok_ticks >= DWELL_TICKS:
+            self.last_report = self.verifier.update(obs)
+            if self.last_report.state == "recovered":
                 inc.status = "recovered"
+                return inc
+            if self.last_report.state == "unresolved":
+                inc.status = "unresolved"
                 return inc
         return None
 
-    def begin_recovery(self, incident_id: str) -> Incident:
+    def begin_recovery(self, incident_id: str, t: float = 0.0) -> Incident:
         inc = self.incidents[incident_id]
         inc.status = "recovering"
-        self._ok_ticks = 0
+        self.verifier.start(t)
+        self.last_report = RecoveryReport(state="recovering")
         return inc

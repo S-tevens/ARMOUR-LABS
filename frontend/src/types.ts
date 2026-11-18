@@ -63,7 +63,8 @@ export interface Incident {
 export interface ScenarioInfo {
   name: string;
   label: string;
-  kind: "attack" | "fault";
+  kind: "attack" | "fault" | "benign";
+  group: "core" | "extra";
   mitre: string | null;
   description: string;
 }
