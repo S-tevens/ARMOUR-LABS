@@ -71,6 +71,8 @@ class Scores(BaseModel):
     controller: float = 0.0
     process: float = 0.0
     twin: float = 0.0
+    ml: float = 0.0  # unsupervised autoencoder, normalised so 0.8 is the alert level
+    invariants: float = 0.0  # physics consistency checks, same scale
 
 
 class Evidence(BaseModel):

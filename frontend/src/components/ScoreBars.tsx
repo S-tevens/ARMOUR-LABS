@@ -1,11 +1,13 @@
 import Meter from "./Meter";
 import type { Scores } from "../types";
 
-const ROWS: { key: "network" | "controller" | "process" | "twin"; label: string; note: string }[] = [
+const ROWS: { key: "network" | "controller" | "process" | "twin" | "invariants" | "ml"; label: string; note: string }[] = [
   { key: "network", label: "Network", note: "Unauthorised messages" },
   { key: "controller", label: "Controller", note: "Commands outside the schedule" },
   { key: "process", label: "Process", note: "Pressure and flow behaviour" },
   { key: "twin", label: "Digital twin", note: "Distance from expected state" },
+  { key: "invariants", label: "Physics checks", note: "Readings that cannot all be true" },
+  { key: "ml", label: "Machine learning", note: "Unusual overall behaviour" },
 ];
 
 const tone = (v: number): "green" | "amber" | "red" => (v >= 0.8 ? "red" : v >= 0.4 ? "amber" : "green");
@@ -15,10 +17,10 @@ export default function ScoreBars({ scores }: { scores: Scores | null }) {
     <section className="glass scores">
       <header className="panel-head">
         <h2>Detector scores</h2>
-        <span className="muted small">Baseline detector, not measured results</span>
+        <span className="muted small">Live scores. Measured results are on the Metrics tab</span>
       </header>
       {ROWS.map((r) => {
-        const v = scores ? scores[r.key] : 0;
+        const v = scores ? (scores[r.key] ?? 0) : 0;
         return (
           <div className="score-row" key={r.key}>
             <div className="score-label"><b>{r.label}</b><span>{r.note}</span></div>

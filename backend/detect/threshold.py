@@ -20,6 +20,18 @@ VOLT_LIMIT_PU = 0.05
 SOC_LOW_PCT = 20.0
 
 
+def process_score(obs: Telemetry) -> float:
+    """The simple fixed-limit baseline: frequency, voltage and battery charge against engineering limits."""
+    return min(
+        1.0,
+        max(
+            abs(obs.frequency - 50.0) / FREQ_LIMIT_HZ,
+            abs(obs.bus_voltage - 1.0) / VOLT_LIMIT_PU,
+            max(0.0, SOC_LOW_PCT - obs.bess_soc) / 10.0,
+        ),
+    )
+
+
 class ThresholdDetector:
     def __init__(self) -> None:
         self._unauthorised: deque[float] = deque()  # timestamps of unauthorised events
@@ -32,14 +44,7 @@ class ThresholdDetector:
             self._unauthorised.popleft()
         net = 0.9 if self._unauthorised else 0.0
 
-        process = min(
-            1.0,
-            max(
-                abs(obs.frequency - 50.0) / FREQ_LIMIT_HZ,
-                abs(obs.bus_voltage - 1.0) / VOLT_LIMIT_PU,
-                max(0.0, SOC_LOW_PCT - obs.bess_soc) / 10.0,
-            ),
-        )
+        process = process_score(obs)
         twin_score = min(1.0, max(abs(v) for v in twin.norm_residual.values()) / 6.0)
         return Scores(
             t=obs.t,
@@ -51,4 +56,4 @@ class ThresholdDetector:
 
     @staticmethod
     def is_alert(s: Scores) -> bool:
-        return max(s.network, s.controller, s.process, s.twin) >= ALERT_THRESHOLD
+        return max(s.network, s.controller, s.process, s.twin, s.ml, s.invariants) >= ALERT_THRESHOLD

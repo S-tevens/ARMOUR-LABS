@@ -1,0 +1,1916 @@
+{
+ "status": "ok",
+ "generated_at": "2026-11-18T16:13:13+00:00",
+ "duration_s": 24.1,
+ "source": "custom simulator (not a public dataset)",
+ "protocol": {
+  "test_normal_seeds": [
+   201,
+   202,
+   203
+  ],
+  "test_normal_demand_levels": [
+   [
+    211,
+    0.85
+   ],
+   [
+    212,
+    1.15
+   ],
+   [
+    213,
+    1.3
+   ]
+  ],
+  "test_scenario_seeds": [
+   301,
+   302,
+   303
+  ],
+  "normal_run_s": 900,
+  "scenario_run_s": 750,
+  "scenario_active_s": [
+   300,
+   600
+  ],
+  "grace_after_scenario_s": 30,
+  "alert_rule": "score at or above 0.8 for two consecutive seconds",
+  "test_runs": 39,
+  "negative_seconds": 21060,
+  "negative_hours": 5.85,
+  "attack_or_fault_runs": 27,
+  "benign_runs": 6
+ },
+ "training": {
+  "train_normal_seeds": [
+   101,
+   102,
+   103,
+   104
+  ],
+  "train_benign": [
+   [
+    "planned_switching",
+    111
+   ],
+   [
+    "planned_switching",
+    112
+   ],
+   [
+    "cloud_cover",
+    113
+   ],
+   [
+    "cloud_cover",
+    114
+   ]
+  ],
+  "train_demand_levels": [
+   [
+    121,
+    0.8
+   ],
+   [
+    122,
+    0.9
+   ],
+   [
+    123,
+    1.1
+   ],
+   [
+    124,
+    1.25
+   ],
+   [
+    125,
+    1.35
+   ]
+  ],
+  "validation_normal_seeds": [
+   105,
+   106
+  ],
+  "validation_benign": [
+   [
+    "planned_switching",
+    115
+   ],
+   [
+    "cloud_cover",
+    116
+   ]
+  ],
+  "validation_demand_levels": [
+   [
+    126,
+    0.95
+   ],
+   [
+    127,
+    1.2
+   ]
+  ],
+  "selection_seeds": [
+   401,
+   402
+  ],
+  "train_rows": 10970,
+  "seconds_to_train": 7.0,
+  "tolerances": {
+   "power_balance_kw": 32.5,
+   "frequency_hz": 0.06,
+   "voltage_pu": 0.012,
+   "solar_kw": 23.1
+  },
+  "selected_model": "pca",
+  "selection": {
+   "iforest": {
+    "label": "Isolation Forest",
+    "detected": 0,
+    "of": 9,
+    "false_alarm_runs": 0,
+    "mean_delay_s": null
+   },
+   "pca": {
+    "label": "Linear autoencoder (PCA)",
+    "detected": 8,
+    "of": 9,
+    "false_alarm_runs": 0,
+    "mean_delay_s": 4.6
+   },
+   "ocsvm": {
+    "label": "One-class SVM",
+    "detected": 7,
+    "of": 9,
+    "false_alarm_runs": 0,
+    "mean_delay_s": 21.4
+   }
+  },
+  "alert_levels": {
+   "iforest": {
+    "median": 0.414,
+    "alert": 0.72
+   },
+   "pca": {
+    "median": 0.31,
+    "alert": 1.046
+   },
+   "ocsvm": {
+    "median": -1.555,
+    "alert": -0.371
+   }
+  }
+ },
+ "detectors": [
+  {
+   "key": "limits",
+   "label": "Fixed limits",
+   "family": "baseline",
+   "description": "Frequency, voltage and battery charge against engineering limits. The simple threshold baseline.",
+   "tick": {
+    "tp": 2354,
+    "fp": 0,
+    "fn": 5746,
+    "tn": 21060,
+    "precision": 1.0,
+    "recall": 0.291,
+    "f1": 0.451,
+    "fpr": 0.0
+   },
+   "runs": {
+    "detected": 9,
+    "total": 27,
+    "rate": 0.333,
+    "median_delay_s": 54.0,
+    "mean_delay_s": 37.9
+   },
+   "false_alarms": {
+    "events": 0,
+    "per_hour": 0.0,
+    "benign_runs_alarmed": 0,
+    "benign_runs": 6
+   }
+  },
+  {
+   "key": "network",
+   "label": "Unauthorised-message rule",
+   "family": "baseline",
+   "description": "Alerts when a message from a source that is not on the allow-list is seen.",
+   "tick": {
+    "tp": 978,
+    "fp": 0,
+    "fn": 7122,
+    "tn": 21060,
+    "precision": 1.0,
+    "recall": 0.121,
+    "f1": 0.216,
+    "fpr": 0.0
+   },
+   "runs": {
+    "detected": 12,
+    "total": 27,
+    "rate": 0.444,
+    "median_delay_s": 1.0,
+    "mean_delay_s": 1.0
+   },
+   "false_alarms": {
+    "events": 0,
+    "per_hour": 0.0,
+    "benign_runs_alarmed": 0,
+    "benign_runs": 6
+   }
+  },
+  {
+   "key": "twin",
+   "label": "Digital twin",
+   "family": "digital twin",
+   "description": "Distance between the readings and what the authorised commands say should be happening.",
+   "tick": {
+    "tp": 6041,
+    "fp": 0,
+    "fn": 2059,
+    "tn": 21060,
+    "precision": 1.0,
+    "recall": 0.746,
+    "f1": 0.855,
+    "fpr": 0.0
+   },
+   "runs": {
+    "detected": 21,
+    "total": 27,
+    "rate": 0.778,
+    "median_delay_s": 1.0,
+    "mean_delay_s": 12.2
+   },
+   "false_alarms": {
+    "events": 0,
+    "per_hour": 0.0,
+    "benign_runs_alarmed": 0,
+    "benign_runs": 6
+   }
+  },
+  {
+   "key": "invariants",
+   "label": "Physics checks",
+   "family": "physics",
+   "description": "Consistency relations between signals (power balance, frequency, breaker and load, solar and weather).",
+   "tick": {
+    "tp": 6138,
+    "fp": 0,
+    "fn": 1962,
+    "tn": 21060,
+    "precision": 1.0,
+    "recall": 0.758,
+    "f1": 0.862,
+    "fpr": 0.0
+   },
+   "runs": {
+    "detected": 21,
+    "total": 27,
+    "rate": 0.778,
+    "median_delay_s": 1.0,
+    "mean_delay_s": 6.1
+   },
+   "false_alarms": {
+    "events": 0,
+    "per_hour": 0.0,
+    "benign_runs_alarmed": 0,
+    "benign_runs": 6
+   }
+  },
+  {
+   "key": "iforest",
+   "label": "Isolation Forest",
+   "family": "machine learning",
+   "description": "Tree-based unsupervised anomaly detector.",
+   "tick": {
+    "tp": 0,
+    "fp": 0,
+    "fn": 8100,
+    "tn": 21060,
+    "precision": null,
+    "recall": 0.0,
+    "f1": 0.0,
+    "fpr": 0.0
+   },
+   "runs": {
+    "detected": 0,
+    "total": 27,
+    "rate": 0.0,
+    "median_delay_s": null,
+    "mean_delay_s": null
+   },
+   "false_alarms": {
+    "events": 0,
+    "per_hour": 0.0,
+    "benign_runs_alarmed": 0,
+    "benign_runs": 6
+   }
+  },
+  {
+   "key": "ocsvm",
+   "label": "One-class SVM",
+   "family": "machine learning",
+   "description": "Unsupervised boundary around normal behaviour.",
+   "tick": {
+    "tp": 4959,
+    "fp": 0,
+    "fn": 3141,
+    "tn": 21060,
+    "precision": 1.0,
+    "recall": 0.612,
+    "f1": 0.759,
+    "fpr": 0.0
+   },
+   "runs": {
+    "detected": 21,
+    "total": 27,
+    "rate": 0.778,
+    "median_delay_s": 1.0,
+    "mean_delay_s": 22.0
+   },
+   "false_alarms": {
+    "events": 0,
+    "per_hour": 0.0,
+    "benign_runs_alarmed": 0,
+    "benign_runs": 6
+   }
+  },
+  {
+   "key": "pca_pure",
+   "label": "Autoencoder, normal data only",
+   "family": "machine learning",
+   "description": "The linear autoencoder trained without any legitimate operating changes.",
+   "tick": {
+    "tp": 7085,
+    "fp": 4662,
+    "fn": 1015,
+    "tn": 16398,
+    "precision": 0.603,
+    "recall": 0.875,
+    "f1": 0.714,
+    "fpr": 0.221
+   },
+   "runs": {
+    "detected": 24,
+    "total": 27,
+    "rate": 0.889,
+    "median_delay_s": 1.0,
+    "mean_delay_s": 4.4
+   },
+   "false_alarms": {
+    "events": 57,
+    "per_hour": 9.74,
+    "benign_runs_alarmed": 6,
+    "benign_runs": 6
+   }
+  },
+  {
+   "key": "pca",
+   "label": "Linear autoencoder (PCA)",
+   "family": "machine learning",
+   "description": "Unsupervised: learns how signals normally relate and flags readings that break those relations. Drives the live dashboard.",
+   "tick": {
+    "tp": 7084,
+    "fp": 0,
+    "fn": 1016,
+    "tn": 21060,
+    "precision": 1.0,
+    "recall": 0.875,
+    "f1": 0.933,
+    "fpr": 0.0
+   },
+   "runs": {
+    "detected": 24,
+    "total": 27,
+    "rate": 0.889,
+    "median_delay_s": 1.0,
+    "mean_delay_s": 4.5
+   },
+   "false_alarms": {
+    "events": 0,
+    "per_hour": 0.0,
+    "benign_runs_alarmed": 0,
+    "benign_runs": 6
+   }
+  },
+  {
+   "key": "combined",
+   "label": "Combined",
+   "family": "fusion",
+   "description": "Fixed limits, unauthorised-message rule, twin, physics checks and the autoencoder, any of which can raise an alert.",
+   "tick": {
+    "tp": 7981,
+    "fp": 0,
+    "fn": 119,
+    "tn": 21060,
+    "precision": 1.0,
+    "recall": 0.985,
+    "f1": 0.992,
+    "fpr": 0.0
+   },
+   "runs": {
+    "detected": 27,
+    "total": 27,
+    "rate": 1.0,
+    "median_delay_s": 1.0,
+    "mean_delay_s": 4.1
+   },
+   "false_alarms": {
+    "events": 0,
+    "per_hour": 0.0,
+    "benign_runs_alarmed": 0,
+    "benign_runs": 6
+   }
+  }
+ ],
+ "scenarios": [
+  {
+   "name": "unauthorised_breaker_trip",
+   "label": "Unauthorised breaker trip",
+   "kind": "attack",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "network": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "twin": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "invariants": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    }
+   }
+  },
+  {
+   "name": "false_data_injection",
+   "label": "False frequency report",
+   "kind": "attack",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "network": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "twin": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "invariants": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    }
+   }
+  },
+  {
+   "name": "sensor_drift",
+   "label": "Voltage sensor drift (fault)",
+   "kind": "fault",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 59.0
+    },
+    "network": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "twin": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 42.0
+    },
+    "invariants": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 20.0
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 78.0
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 15.0
+    },
+    "pca": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 15.0
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 15.0
+    }
+   }
+  },
+  {
+   "name": "replay_attack",
+   "label": "Replay attack",
+   "kind": "attack",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "network": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "twin": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "invariants": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    }
+   }
+  },
+  {
+   "name": "dos_flood",
+   "label": "Denial of service",
+   "kind": "attack",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "network": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "twin": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "invariants": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 2.0
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    }
+   }
+  },
+  {
+   "name": "planned_switching",
+   "label": "Planned switching (legitimate)",
+   "kind": "benign",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "network": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "twin": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "invariants": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "pca": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "combined": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    }
+   }
+  },
+  {
+   "name": "cloud_cover",
+   "label": "Passing clouds (natural)",
+   "kind": "benign",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "network": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "twin": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "invariants": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "pca": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "combined": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    }
+   }
+  },
+  {
+   "name": "stuck_breaker",
+   "label": "Stuck breaker (fault)",
+   "kind": "fault",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "network": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "twin": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "invariants": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "pca_pure": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "pca": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    }
+   }
+  },
+  {
+   "name": "pv_inverter_trip",
+   "label": "PV inverter trip (fault)",
+   "kind": "fault",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "network": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "twin": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "invariants": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    }
+   }
+  },
+  {
+   "name": "fdi_small",
+   "label": "Small false data (subtle)",
+   "kind": "attack",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "network": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "twin": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "invariants": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "pca": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 1.0
+    }
+   }
+  },
+  {
+   "name": "fdi_slow_ramp",
+   "label": "Slow-ramp false data (subtle)",
+   "kind": "attack",
+   "runs": 3,
+   "per_detector": {
+    "limits": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 54.0
+    },
+    "network": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "twin": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 38.0
+    },
+    "invariants": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 18.0
+    },
+    "iforest": {
+     "detected": 0,
+     "runs": 3,
+     "median_delay_s": null
+    },
+    "ocsvm": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 70.0
+    },
+    "pca_pure": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 15.0
+    },
+    "pca": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 15.0
+    },
+    "combined": {
+     "detected": 3,
+     "runs": 3,
+     "median_delay_s": 15.0
+    }
+   }
+  }
+ ],
+ "limitations": [
+  "Everything is measured on the project's own simulator, not on a public dataset or a real grid. The same simulator makes the training and test data, so these numbers show that the pipeline works, not how it would perform in the real world.",
+  "The physics checks and the autoencoder exploit relations the simple simulated plant follows almost exactly. A real grid is noisier, so real tolerances are wider and detection would be weaker.",
+  "Only 3 runs per scenario: detection rates are indicative, with wide uncertainty, and no confidence intervals are given.",
+  "Tick-level precision and recall are dominated by the many quiet seconds. Detection per run, delay and false alarms per hour are the more meaningful numbers.",
+  "A stuck breaker is physically consistent with the readings. Only the twin, which knows the command was authorised but did not take effect, can catch it.",
+  "The detectors were developed while looking at the main test runs (to find modelling bugs), so those numbers are a development estimate. The fresh-seed check uses seeds that were never looked at and is the cleaner figure. No threshold or model was tuned to improve either set of numbers.",
+  "A different seed changes only the measurement noise, because the scenarios themselves are deterministic. Matching results on new seeds therefore show robustness to noise, not to new kinds of attack the detectors have never been designed for.",
+  "Models were trained and calibrated only on normal operation and legitimate changes. They never saw an attack or fault, and the model driving the dashboard was chosen on separate validation runs, not on these test runs."
+ ],
+ "fresh_check": {
+  "note": "The same protocol on seeds that were never looked at while the detectors were being developed, so it is the cleaner estimate.",
+  "seed_offset": 1000,
+  "protocol": {
+   "test_normal_seeds": [
+    1201,
+    1202,
+    1203
+   ],
+   "test_normal_demand_levels": [
+    [
+     1211,
+     0.85
+    ],
+    [
+     1212,
+     1.15
+    ],
+    [
+     1213,
+     1.3
+    ]
+   ],
+   "test_scenario_seeds": [
+    1301,
+    1302,
+    1303
+   ],
+   "normal_run_s": 900,
+   "scenario_run_s": 750,
+   "scenario_active_s": [
+    300,
+    600
+   ],
+   "grace_after_scenario_s": 30,
+   "alert_rule": "score at or above 0.8 for two consecutive seconds",
+   "test_runs": 39,
+   "negative_seconds": 21060,
+   "negative_hours": 5.85,
+   "attack_or_fault_runs": 27,
+   "benign_runs": 6
+  },
+  "detectors": [
+   {
+    "key": "limits",
+    "label": "Fixed limits",
+    "family": "baseline",
+    "description": "Frequency, voltage and battery charge against engineering limits. The simple threshold baseline.",
+    "tick": {
+     "tp": 2354,
+     "fp": 0,
+     "fn": 5746,
+     "tn": 21060,
+     "precision": 1.0,
+     "recall": 0.291,
+     "f1": 0.451,
+     "fpr": 0.0
+    },
+    "runs": {
+     "detected": 9,
+     "total": 27,
+     "rate": 0.333,
+     "median_delay_s": 51.0,
+     "mean_delay_s": 37.6
+    },
+    "false_alarms": {
+     "events": 0,
+     "per_hour": 0.0,
+     "benign_runs_alarmed": 0,
+     "benign_runs": 6
+    }
+   },
+   {
+    "key": "network",
+    "label": "Unauthorised-message rule",
+    "family": "baseline",
+    "description": "Alerts when a message from a source that is not on the allow-list is seen.",
+    "tick": {
+     "tp": 978,
+     "fp": 0,
+     "fn": 7122,
+     "tn": 21060,
+     "precision": 1.0,
+     "recall": 0.121,
+     "f1": 0.216,
+     "fpr": 0.0
+    },
+    "runs": {
+     "detected": 12,
+     "total": 27,
+     "rate": 0.444,
+     "median_delay_s": 1.0,
+     "mean_delay_s": 1.0
+    },
+    "false_alarms": {
+     "events": 0,
+     "per_hour": 0.0,
+     "benign_runs_alarmed": 0,
+     "benign_runs": 6
+    }
+   },
+   {
+    "key": "twin",
+    "label": "Digital twin",
+    "family": "digital twin",
+    "description": "Distance between the readings and what the authorised commands say should be happening.",
+    "tick": {
+     "tp": 6040,
+     "fp": 0,
+     "fn": 2060,
+     "tn": 21060,
+     "precision": 1.0,
+     "recall": 0.746,
+     "f1": 0.855,
+     "fpr": 0.0
+    },
+    "runs": {
+     "detected": 21,
+     "total": 27,
+     "rate": 0.778,
+     "median_delay_s": 1.0,
+     "mean_delay_s": 12.2
+    },
+    "false_alarms": {
+     "events": 0,
+     "per_hour": 0.0,
+     "benign_runs_alarmed": 0,
+     "benign_runs": 6
+    }
+   },
+   {
+    "key": "invariants",
+    "label": "Physics checks",
+    "family": "physics",
+    "description": "Consistency relations between signals (power balance, frequency, breaker and load, solar and weather).",
+    "tick": {
+     "tp": 6152,
+     "fp": 0,
+     "fn": 1948,
+     "tn": 21060,
+     "precision": 1.0,
+     "recall": 0.76,
+     "f1": 0.864,
+     "fpr": 0.0
+    },
+    "runs": {
+     "detected": 21,
+     "total": 27,
+     "rate": 0.778,
+     "median_delay_s": 1.0,
+     "mean_delay_s": 6.2
+    },
+    "false_alarms": {
+     "events": 0,
+     "per_hour": 0.0,
+     "benign_runs_alarmed": 0,
+     "benign_runs": 6
+    }
+   },
+   {
+    "key": "iforest",
+    "label": "Isolation Forest",
+    "family": "machine learning",
+    "description": "Tree-based unsupervised anomaly detector.",
+    "tick": {
+     "tp": 0,
+     "fp": 0,
+     "fn": 8100,
+     "tn": 21060,
+     "precision": null,
+     "recall": 0.0,
+     "f1": 0.0,
+     "fpr": 0.0
+    },
+    "runs": {
+     "detected": 0,
+     "total": 27,
+     "rate": 0.0,
+     "median_delay_s": null,
+     "mean_delay_s": null
+    },
+    "false_alarms": {
+     "events": 0,
+     "per_hour": 0.0,
+     "benign_runs_alarmed": 0,
+     "benign_runs": 6
+    }
+   },
+   {
+    "key": "ocsvm",
+    "label": "One-class SVM",
+    "family": "machine learning",
+    "description": "Unsupervised boundary around normal behaviour.",
+    "tick": {
+     "tp": 4967,
+     "fp": 5,
+     "fn": 3133,
+     "tn": 21055,
+     "precision": 0.999,
+     "recall": 0.613,
+     "f1": 0.76,
+     "fpr": 0.0
+    },
+    "runs": {
+     "detected": 21,
+     "total": 27,
+     "rate": 0.778,
+     "median_delay_s": 1.0,
+     "mean_delay_s": 21.2
+    },
+    "false_alarms": {
+     "events": 2,
+     "per_hour": 0.34,
+     "benign_runs_alarmed": 2,
+     "benign_runs": 6
+    }
+   },
+   {
+    "key": "pca_pure",
+    "label": "Autoencoder, normal data only",
+    "family": "machine learning",
+    "description": "The linear autoencoder trained without any legitimate operating changes.",
+    "tick": {
+     "tp": 7080,
+     "fp": 4631,
+     "fn": 1020,
+     "tn": 16429,
+     "precision": 0.605,
+     "recall": 0.874,
+     "f1": 0.715,
+     "fpr": 0.22
+    },
+    "runs": {
+     "detected": 24,
+     "total": 27,
+     "rate": 0.889,
+     "median_delay_s": 1.0,
+     "mean_delay_s": 4.8
+    },
+    "false_alarms": {
+     "events": 64,
+     "per_hour": 10.94,
+     "benign_runs_alarmed": 6,
+     "benign_runs": 6
+    }
+   },
+   {
+    "key": "pca",
+    "label": "Linear autoencoder (PCA)",
+    "family": "machine learning",
+    "description": "Unsupervised: learns how signals normally relate and flags readings that break those relations. Drives the live dashboard.",
+    "tick": {
+     "tp": 7082,
+     "fp": 0,
+     "fn": 1018,
+     "tn": 21060,
+     "precision": 1.0,
+     "recall": 0.874,
+     "f1": 0.933,
+     "fpr": 0.0
+    },
+    "runs": {
+     "detected": 24,
+     "total": 27,
+     "rate": 0.889,
+     "median_delay_s": 1.0,
+     "mean_delay_s": 4.8
+    },
+    "false_alarms": {
+     "events": 0,
+     "per_hour": 0.0,
+     "benign_runs_alarmed": 0,
+     "benign_runs": 6
+    }
+   },
+   {
+    "key": "combined",
+    "label": "Combined",
+    "family": "fusion",
+    "description": "Fixed limits, unauthorised-message rule, twin, physics checks and the autoencoder, any of which can raise an alert.",
+    "tick": {
+     "tp": 7979,
+     "fp": 0,
+     "fn": 121,
+     "tn": 21060,
+     "precision": 1.0,
+     "recall": 0.985,
+     "f1": 0.992,
+     "fpr": 0.0
+    },
+    "runs": {
+     "detected": 27,
+     "total": 27,
+     "rate": 1.0,
+     "median_delay_s": 1.0,
+     "mean_delay_s": 4.4
+    },
+    "false_alarms": {
+     "events": 0,
+     "per_hour": 0.0,
+     "benign_runs_alarmed": 0,
+     "benign_runs": 6
+    }
+   }
+  ],
+  "scenarios": [
+   {
+    "name": "unauthorised_breaker_trip",
+    "label": "Unauthorised breaker trip",
+    "kind": "attack",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "network": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "twin": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "invariants": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     }
+    }
+   },
+   {
+    "name": "false_data_injection",
+    "label": "False frequency report",
+    "kind": "attack",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "network": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "twin": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "invariants": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     }
+    }
+   },
+   {
+    "name": "sensor_drift",
+    "label": "Voltage sensor drift (fault)",
+    "kind": "fault",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 59.0
+     },
+     "network": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "twin": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 44.0
+     },
+     "invariants": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 18.0
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 76.0
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 17.0
+     },
+     "pca": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 17.0
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 17.0
+     }
+    }
+   },
+   {
+    "name": "replay_attack",
+    "label": "Replay attack",
+    "kind": "attack",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "network": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "twin": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "invariants": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     }
+    }
+   },
+   {
+    "name": "dos_flood",
+    "label": "Denial of service",
+    "kind": "attack",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "network": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "twin": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "invariants": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 4.0
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     }
+    }
+   },
+   {
+    "name": "planned_switching",
+    "label": "Planned switching (legitimate)",
+    "kind": "benign",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "network": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "twin": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "invariants": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 1,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "pca": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "combined": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     }
+    }
+   },
+   {
+    "name": "cloud_cover",
+    "label": "Passing clouds (natural)",
+    "kind": "benign",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "network": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "twin": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "invariants": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 1,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "pca": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "combined": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     }
+    }
+   },
+   {
+    "name": "stuck_breaker",
+    "label": "Stuck breaker (fault)",
+    "kind": "fault",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "network": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "twin": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "invariants": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "pca_pure": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "pca": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     }
+    }
+   },
+   {
+    "name": "pv_inverter_trip",
+    "label": "PV inverter trip (fault)",
+    "kind": "fault",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "network": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "twin": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "invariants": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     }
+    }
+   },
+   {
+    "name": "fdi_small",
+    "label": "Small false data (subtle)",
+    "kind": "attack",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "network": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "twin": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "invariants": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "pca": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 1.0
+     }
+    }
+   },
+   {
+    "name": "fdi_slow_ramp",
+    "label": "Slow-ramp false data (subtle)",
+    "kind": "attack",
+    "runs": 3,
+    "per_detector": {
+     "limits": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 51.0
+     },
+     "network": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "twin": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 37.0
+     },
+     "invariants": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 17.0
+     },
+     "iforest": {
+      "detected": 0,
+      "runs": 3,
+      "median_delay_s": null
+     },
+     "ocsvm": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 68.0
+     },
+     "pca_pure": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 17.0
+     },
+     "pca": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 17.0
+     },
+     "combined": {
+      "detected": 3,
+      "runs": 3,
+      "median_delay_s": 17.0
+     }
+    }
+   }
+  ]
+ }
+}

@@ -42,6 +42,7 @@ class SimulationEngine:
         self.suppress_heartbeat: set[str] = set()  # IEDs whose heartbeats are dropped (DoS)
         self.containment: Containment | None = None
         self.containment_log: list[dict] = []
+        self._commanded: dict[str, str] = {}  # last authorised command per register (so a restore can be authorised too)
 
     # --- events --------------------------------------------------------------------
     def emit(self, src, dst, function_code, register, value, authorised, *, seq=None, t=None) -> NetworkEvent:
@@ -72,6 +73,7 @@ class SimulationEngine:
         code = "OPERATE" if breaker else "WRITE_SETPOINT"
         e = self.emit("SCADA", dst, code, register, value, True)
         self.command_log.append(e)
+        self._commanded[register] = str(value)
         p = self.plant
         if breaker:
             p.set_breaker(breaker, value in ("CLOSE", True, 1))
@@ -96,6 +98,13 @@ class SimulationEngine:
         self.suppress_heartbeat.clear()
         self.containment = None
         self.plant.reset_to_safe()
+        # Restoring the normal lineup is an operator action: send it as authorised commands, so the digital twin (which
+        # follows only authorised commands) knows the breakers and set-points are back to normal.
+        defaults = {"BESS_MODE": "AUTO", "IMPORT_TARGET_KW": str(self.plant.p.import_target_kw)}
+        for reg, last in list(self._commanded.items()):
+            want = "CLOSE" if REGISTERS[reg][1] else defaults[reg]
+            if last != want:
+                self.command(reg, want if REGISTERS[reg][1] else (float(want) if reg == "IMPORT_TARGET_KW" else want))
 
     def ground_truth(self) -> dict:
         """What is really happening (for datasets and evaluation; detectors must not read this)."""

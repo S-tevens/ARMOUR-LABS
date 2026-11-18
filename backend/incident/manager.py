@@ -8,6 +8,8 @@ Recovery status comes from sim.recovery.RecoveryVerifier, never from the alert g
 """
 from __future__ import annotations
 
+import re
+
 from core.contracts import Evidence, Incident, NetworkEvent, Scores, Telemetry, TwinState
 from sim.recovery import RecoveryReport, RecoveryVerifier
 
@@ -24,6 +26,11 @@ LABELS = {
 IED_NAMES = {"ied01": "IED-01", "ied02": "IED-02", "ied03": "IED-03"}
 EVIDENCE_THRESHOLD = 4.0  # normalised residual
 MAX_RESIDUAL_EVIDENCE = 3
+
+
+def _shape(e: Evidence) -> tuple[str, str]:
+    """An evidence line with its numbers removed, so a repeated statement with new values is recognised as the same."""
+    return e.type, re.sub(r"[-+]?\d+(?:\.\d+)?", "#", e.text)
 
 
 def _residual_evidence(twin: TwinState) -> list[Evidence]:
@@ -59,7 +66,8 @@ class IncidentManager:
         return None
 
     def update(
-        self, obs: Telemetry, twin: TwinState, scores: Scores, alert: bool, events: list[NetworkEvent]
+        self, obs: Telemetry, twin: TwinState, scores: Scores, alert: bool, events: list[NetworkEvent],
+        extra: list[Evidence] | None = None,
     ) -> Incident | None:
         """Returns an incident when one is created or changes status; otherwise None."""
         inc = self.active()
@@ -67,7 +75,7 @@ class IncidentManager:
             if not alert:
                 return None
             self._counter += 1
-            evidence = _residual_evidence(twin)
+            evidence = _residual_evidence(twin) + list(extra or [])
             for e in events:
                 if not e.authorised:
                     evidence.append(Evidence(
@@ -90,6 +98,12 @@ class IncidentManager:
             self.incidents[inc.id] = inc
             return inc
 
+        if inc.status == "open":
+            inc.scores = scores.model_dump(exclude={"t"})  # the open incident shows the latest scores
+            # keep gathering evidence as the slower detectors confirm it; the same sentence with new numbers is not new
+            have = {_shape(e) for e in inc.evidence}
+            fresh = [e for e in (extra or []) if _shape(e) not in have]
+            inc.evidence += fresh[: max(0, 8 - len(inc.evidence))]
         if inc.status == "recovering":
             self.last_report = self.verifier.update(obs)
             if self.last_report.state == "recovered":

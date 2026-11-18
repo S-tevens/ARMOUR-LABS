@@ -34,6 +34,7 @@ BESS_LAG = 0.38
 SOC_TARGET = 60.0
 SOC_GAIN_KW_PER_PCT = 10.0
 DEFAULT_IMPORT_TARGET_KW = 320.0
+SOC_OBSERVER_GAIN = 0.01
 
 # Normalisation scale per variable: roughly one standard deviation of the residual in normal operation.
 SCALE = {
@@ -61,6 +62,7 @@ class GridTwin:
         self.pmax = p.bess_pmax_kw
         self.cap = p.bess_cap_kwh * (205.0 / 200.0)
         self.load_phase = p.load_phase
+        self.scale = p.scale
         self.demand_factor = 1.0  # the demand FORECAST (a schedule, like the clock); attacks do not change it
         self.breakers = {b: True for b in BREAKER_FIELDS}  # EXPECTED states, from authorised commands only
         self.import_target = p.import_target_kw
@@ -107,11 +109,14 @@ class GridTwin:
         if not b["cb_bess"]:
             self.bess_kw = 0.0
         self.soc = float(np.clip(self.soc - self.bess_kw / (self.cap * 3600.0) * 100.0, 0.0, 100.0))
+        # state estimation: pull the integrated charge slowly toward the measurement, so an incident that really changed the
+        # battery charge does not leave the twin permanently wrong (time constant about 100 s)
+        self.soc += SOC_OBSERVER_GAIN * (obs.bess_soc - self.soc)
 
         if b["cb_main"]:
             grid = load - pv - self.bess_kw
             freq = 50.0
-            volt = 1.0 - 0.00003 * (grid - 300.0)
+            volt = 1.0 - 0.00003 * (grid / self.scale - 300.0)
         else:
             grid = 0.0
             imbalance = pv + self.bess_kw - load

@@ -14,15 +14,17 @@ import ScoreBars from "./components/ScoreBars";
 import SensorStrip from "./components/SensorStrip";
 import SimulatorCard from "./components/SimulatorCard";
 import TwinChart from "./components/TwinChart";
+import MetricsView from "./metrics/MetricsView";
 import { useStream } from "./useStream";
 import type { ScenarioInfo } from "./types";
 
-type Tab = "city" | "dashboard" | "network" | "incidents";
+type Tab = "city" | "dashboard" | "network" | "incidents" | "metrics";
 const TABS: { id: Tab; label: string }[] = [
   { id: "city", label: "City" },
   { id: "dashboard", label: "Substation" },
   { id: "network", label: "Network" },
   { id: "incidents", label: "Incidents" },
+  { id: "metrics", label: "Metrics" },
 ];
 
 function Callout({ at, title, children, tone = "", below = false }: { at: { left: string; top: string }; title: string; children: React.ReactNode; tone?: string; below?: boolean }) {
@@ -188,6 +190,8 @@ export default function App() {
           <EventTable events={s.events} />
         </main>
       )}
+
+      {tab === "metrics" && <MetricsView />}
 
       {tab === "incidents" && (
         <main className="stack">

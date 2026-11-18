@@ -58,6 +58,11 @@ class PlantParams:
     import_target_kw: float = IMPORT_TARGET_KW
     load_phase: float = 0.0  # shifts the load profiles so districts differ
 
+    @property
+    def scale(self) -> float:
+        """Size relative to the original campus microgrid (700 kW of load)."""
+        return (self.load_crit_base + self.load_nc_base) / (LOAD_CRIT_BASE + LOAD_NC_BASE)
+
 
 BREAKERS = ("cb_main", "cb_pv", "cb_bess", "cb_crit", "cb_nc")
 # Measurements an attacker can record and replay.
@@ -172,7 +177,7 @@ class Plant:
         if connected:
             self.grid_import = load - self.pv - self.bess_kw
             self.freq = F_NOM  # the utility holds the frequency
-            self.volt = V_NOM - 0.00003 * (self.grid_import - 300.0)
+            self.volt = V_NOM - 0.00003 * (self.grid_import / self.p.scale - 300.0)  # per-unit loading of this substation
         else:
             self.grid_import = 0.0
             imbalance = self.pv + self.bess_kw - load
@@ -217,15 +222,16 @@ class Plant:
     def observe(self) -> Telemetry:
         n = self.rng.normal
         bias = self.sensor_bias
+        sc = self.p.scale  # meter noise is a fraction of the equipment rating, so it grows with the substation
         vals = {
             "frequency": self.freq + n(0, 0.01) + bias["frequency"],
             "bus_voltage": self.volt + n(0, 0.002) + bias["bus_voltage"],
-            "grid_import_kw": self.grid_import + n(0, 3.0) + bias["grid_import_kw"],
-            "pv_kw": self.pv + n(0, 3.0),
-            "bess_kw": self.bess_kw + n(0, 2.0),
+            "grid_import_kw": self.grid_import + n(0, 3.0 * sc) + bias["grid_import_kw"],
+            "pv_kw": self.pv + n(0, 3.0 * sc),
+            "bess_kw": self.bess_kw + n(0, 2.0 * sc),
             "bess_soc": self.soc + n(0, 0.05),
-            "load_critical_kw": self.load_crit + n(0, 2.0),
-            "load_noncritical_kw": self.load_nc + n(0, 2.0),
+            "load_critical_kw": self.load_crit + n(0, 2.0 * sc),
+            "load_noncritical_kw": self.load_nc + n(0, 2.0 * sc),
             "irradiance": self.irradiance + n(0, 5.0),
         }
         vals = {k: round(float(v), 4 if k == "bus_voltage" else 3) for k, v in vals.items()}

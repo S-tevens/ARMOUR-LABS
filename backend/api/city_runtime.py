@@ -19,6 +19,7 @@ from city.scenarios import ATTACKER_IP, SCENARIO_INFO
 from city.twin import CityTwin
 from core.contracts import Incident
 from db.store import EventStore
+from detect.bundle import peek_bundle
 from sim.plant import PlantParams
 
 MAX_EVENT_MESSAGES_PER_TICK = 5
@@ -35,7 +36,7 @@ def params_for(d: config.District, index: int, featured: str) -> PlantParams:
 
 class CityRuntime:
     def __init__(self, seed: int = 42, tick_seconds: float = 1.0, featured_db: str = ":memory:",
-                 city: str | None = None) -> None:
+                 city: str | None = None, ml: bool = False) -> None:
         self.cfg = config.load(config.LAYOUTS[city] if city else None)
         self.featured = self.cfg.featured
         self.tick_seconds = tick_seconds
@@ -47,6 +48,7 @@ class CityRuntime:
                 db_path=featured_db if d.id == self.featured else ":memory:",
                 tick_seconds=tick_seconds,
                 params=params_for(d, i, self.featured),
+                bundle=peek_bundle if ml else None,
             )
             unit.district = d.id
             self.units[d.id] = unit

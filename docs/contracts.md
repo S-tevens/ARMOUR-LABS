@@ -52,7 +52,7 @@ Each message is an envelope `{ "type": ..., "data": ... }`. Types:
 `{t, expected:{var: number}, residual:{var: number}, norm_residual:{var: number}}` for `frequency, bus_voltage, grid_import_kw, pv_kw, bess_kw, bess_soc, load_critical_kw, load_noncritical_kw, breaker_mismatch`. `breaker_mismatch` is the number of observed breaker states that differ from the states implied by the authorised command log (expected 0).
 
 ### Scores
-`{t, network, controller, process, twin}`, each in [0,1].
+`{t, network, controller, process, twin, invariants, ml}`, each in [0,1]. `invariants` (physics checks) and `ml` (trained anomaly model) stay 0 during the 10-second warm-up and when `ARMOUR_ML=0`. An alert is a score of 0.8 or more for two consecutive seconds. Open incidents show the latest scores and add `physics_check` and `ml_anomaly` evidence.
 
 ### Incident
 `{id, t_start, severity (low|medium|high), confidence, affected_devices[], classification (attack|fault|unknown), scores{}, evidence[{type, text, tag}], status (open|responding|recovering|recovered|unresolved)}`. Evidence `tag` is `observed`, `correlated` or `inferred`. Evidence text must only use real measured values.
@@ -68,7 +68,8 @@ Each message is an envelope `{ "type": ..., "data": ... }`. Types:
 | POST | `/incident/{id}/approve-response` | simulated containment; status becomes `recovering`, then `recovered` once checks pass |
 | GET | `/incidents/{id}/replay` | recorded events/telemetry around the incident, from the event log |
 | GET | `/recovery` | latest recovery verification report (`state` idle/recovering/recovered/unresolved, per-variable limits, seconds in range) plus the containment actions taken |
-| GET | `/metrics` | evaluation results (not implemented yet) |
+| GET | `/metrics` | evaluation results: `status` (`ok`, `running`, `error`, `not_computed`), `detectors[]`, `scenarios[]`, `protocol`, `training`, `fresh_check`, `limitations`, `source`. See docs/evaluation.md |
+| POST | `/metrics/run` | recompute the evaluation in the background (about 30 s); returns `{started}`, false if one is already running |
 
 ## Scenarios
 `kind` is the ground truth: `attack` (malicious), `fault` (physical or sensor fault, not malicious), `benign` (legitimate or natural change that must not be flagged). `group` is `core` (demo set) or `extra` (evaluation and subtle cases).

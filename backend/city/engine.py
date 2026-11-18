@@ -25,6 +25,7 @@ OVERLOAD_LEVEL = 1.10
 OVERLOAD_TRIP_TICKS = 6
 HARD_OVERLOAD = 1.40
 HEARTBEAT_EVERY_TICKS = 5
+FORECAST_EASE = 0.03  # per second: a scheduled demand change takes about a minute to ramp
 DEMAND_RIPPLE = 0.07
 DEMAND_PERIOD_S = 600.0
 EVENT_LOG_CAP = 5000
@@ -208,7 +209,7 @@ class CityEngine:
                 if d.id not in self.stale:
                     self.emit("SCADA", f"SUB-{d.id.upper()}", "READ", "STATUS", "ok", True)
 
-        self.forecast += (self.forecast_target - self.forecast) * 0.15
+        self.forecast += (self.forecast_target - self.forecast) * FORECAST_EASE  # demand changes over minutes, not seconds
         self.attack_factor += (self.attack_target - self.attack_factor) * 0.12
         self.demand_mw = self._demand()
         flows, energised = self._solve(self.demand_mw)

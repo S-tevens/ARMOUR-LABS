@@ -30,11 +30,11 @@ This is the base project: a working end-to-end system you can run today.
 | Live dashboard (isometric substation, relays, twin chart, detector scores, network graph, incidents) | Working |
 | **City layer:** real Bengaluru substations, mapped line routes, hospitals and metro from OpenStreetMap on a real map; linear power flow, line overloads and cascades, hospital backup timers, impact counters, 6 city scenarios, priority restoration, city twin, rule-based classification and campaign grouping, recovery verification | Working |
 | **Grid graph and domino replay** (Network tab, expandable) | Working |
-| Threshold baseline detector | Working (baseline only) |
+| Detectors: fixed limits, unauthorised-message rule, twin residuals, physics checks (fitted tolerances) and a trained anomaly model (autoencoder chosen on validation runs) | Working |
 | Incident classification (attack, fault, unknown) | City: rule-based v0 (executable rule table). Substation: placeholder, always "unknown" |
-| ML detector (Isolation Forest), physics checks, evidence fusion, evaluation and `/metrics` | Not built yet |
+| **Metrics tab** and `/metrics`: 9 detectors compared on 39 held-out simulated runs, per-scenario matrix, fresh-seed check, limitations | Working (simulator data only) |
 
-Placeholders are marked `PLACEHOLDER` or `TODO` in the code. The detector scores shown in the dashboard come from the baseline and are **not measured results**.
+Placeholders are marked `PLACEHOLDER` or `TODO` in the code. The live detector scores come from the running detectors. Measured results are on the Metrics tab and are labelled as coming from the custom simulator, not from real grid data. See [docs/evaluation.md](docs/evaluation.md).
 
 ---
 
@@ -131,7 +131,7 @@ Press `Ctrl+C` in each terminal.
 
 ```bash
 cd backend
-python -m pytest            # backend: 55 tests
+python -m pytest            # backend: 74 tests (about a minute)
 cd ../frontend
 npm run build               # frontend: type-check and production build
 ```
@@ -157,6 +157,7 @@ Set these environment variables before starting the backend (all optional):
 | `ARMOUR_TICK_SECONDS` | `1.0` | Real seconds per simulated second. Use `0.2` for a faster demo. |
 | `ARMOUR_DB` | in memory | Path of an SQLite file, to keep the event log between restarts. |
 | `ARMOUR_AUTOSTART` | `1` | Set `0` to stop the simulation starting by itself (used by tests). |
+| `ARMOUR_ML` | `1` | Set `0` to skip training the ML detectors at start-up (about 10 s). Live ML and physics scores then stay 0. |
 | `ARMOUR_CITY` | `osm` | Grid layout: `osm` (real Bengaluru topology) or `synthetic` (small fictional test network). |
 
 For the frontend, `VITE_API_URL` (default `http://localhost:8000`) points the dashboard at a backend on another address.
@@ -186,8 +187,8 @@ Substation simulator ──► meter readings + network/command events
                               │
              ┌────────────────┴────────────────┐
              ▼                                 ▼
-   Detectors (baseline today;        Digital twin: expected state from
-   ML + physics checks planned)      the AUTHORISED command log only
+   Detectors (limits, rules, physics  Digital twin: expected state from
+   checks, trained ML model)         the AUTHORISED command log only
              │                                 │
              └──────────► evidence fusion ◄────┘
                                 │
@@ -230,7 +231,7 @@ Full contracts, endpoints and message shapes: [docs/contracts.md](docs/contracts
 | Frontend | React 18, TypeScript, Vite, SVG |
 | Backend | Python, FastAPI, WebSockets, NumPy |
 | Storage | SQLite (append-only event log, also the source for replay) |
-| Planned ML | scikit-learn (PyTorch only if justified) |
+| ML | scikit-learn (PCA autoencoder, Isolation Forest, one-class SVM) |
 
 ## Repository layout
 
@@ -239,7 +240,8 @@ backend/
   core/contracts.py   shared data models (source of truth)
   sim/                substation model, scenarios, engine, containment, recovery, dataset generator
   twin/               model-based digital twin
-  detect/             detectors (threshold baseline)
+  detect/             detectors: limits, features, physics checks, ML models, training bundle, alert rule
+  evaluation/         evaluation protocol, metrics, results.json, background service
   incident/           incident manager (placeholder classification)
   db/                 append-only SQLite event log
   api/                FastAPI app, WebSocket stream, runtime
@@ -254,6 +256,7 @@ docs/contracts.md     message and API contracts
 
 ## Documents
 
+- [docs/evaluation.md](docs/evaluation.md): detectors, evaluation protocol and what the numbers do not show.
 - [ARMOUR_LABS_CITY_LAYER_PLAN.md](ARMOUR_LABS_CITY_LAYER_PLAN.md): the city layer plan, with per-person tasks and the frontend clarity rules.
 - [docs/city-contracts.md](docs/city-contracts.md): city messages and endpoints.
 - [ARMOUR_LABS_PROJECT_DESCRIPTION.md](ARMOUR_LABS_PROJECT_DESCRIPTION.md): the full project description.
@@ -285,7 +288,7 @@ python -m city.tools.build_osm_city   # builds city/data/bengaluru_osm.json and 
 
 ## Evaluation approach
 
-Accuracy alone is not reported. Planned metrics are precision, recall, F1, false-positive rate, confusion matrix, detection latency, per-attack results and recovery verification time. A threshold baseline, a single ML model and the combined approach are compared using time-based train/test splits, and each result is labelled by source (public dataset or custom simulator).
+Accuracy alone is not reported. The Metrics tab shows precision, recall, F1, false alarms per hour, detection delay, per-scenario results and a confusion matrix, for a threshold baseline, the individual detectors, three ML families and the combined approach. Splits are by run with no shared seeds, the ML model is chosen on separate validation runs, a fresh-seed check is included, and every result is labelled as coming from the custom simulator. Details and caveats: [docs/evaluation.md](docs/evaluation.md).
 
 ## Guardrails
 
