@@ -6,6 +6,7 @@ single-substation API keeps working. City endpoints live under /city.
 from __future__ import annotations
 
 import os
+import threading
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
@@ -14,6 +15,8 @@ from pydantic import BaseModel
 
 from api.city_runtime import CityRuntime
 from api.runtime import Runtime
+from detect.bundle import get_bundle
+from evaluation.service import EvaluationService
 from sim.scenarios import SCENARIO_INFO
 
 
@@ -22,14 +25,18 @@ class ScenarioRequest(BaseModel):
     districts: list[str] | None = None  # city scenarios only
 
 
-def create_app(autostart: bool | None = None, db_path: str | None = None, city: str | None = None) -> FastAPI:
+def create_app(autostart: bool | None = None, db_path: str | None = None, city: str | None = None,
+               ml: bool | None = None, evaluation_path=None) -> FastAPI:
     if autostart is None:
         autostart = os.getenv("ARMOUR_AUTOSTART", "1") == "1"
+    if ml is None:
+        ml = os.getenv("ARMOUR_ML", "1") == "1"
     city = CityRuntime(
         seed=int(os.getenv("ARMOUR_SEED", "42")),
         tick_seconds=float(os.getenv("ARMOUR_TICK_SECONDS", "1.0")),
         featured_db=db_path or os.getenv("ARMOUR_DB", ":memory:"),
         city=city,
+        ml=ml,
     )
     runtime = city.featured_unit  # the original single-substation API works on this unit
 
@@ -42,6 +49,8 @@ def create_app(autostart: bool | None = None, db_path: str | None = None, city: 
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
+        if ml:
+            threading.Thread(target=get_bundle, daemon=True, name="train-detectors").start()  # a few seconds; scores start when ready
         if autostart:
             city.start()  # steps the city and every district substation
         yield
@@ -50,6 +59,8 @@ def create_app(autostart: bool | None = None, db_path: str | None = None, city: 
     app = FastAPI(title="ARMOUR LABS", version="0.2.0", lifespan=lifespan)
     app.state.runtime = runtime
     app.state.city = city
+    evaluation = EvaluationService(evaluation_path) if evaluation_path else EvaluationService()
+    app.state.evaluation = evaluation
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],  # development only
@@ -106,8 +117,13 @@ def create_app(autostart: bool | None = None, db_path: str | None = None, city: 
 
     @app.get("/metrics")
     def metrics():
-        # TODO (P3): precision/recall/F1/FPR/latency from the evaluation script.
-        return {"status": "not_implemented", "note": "no measured results yet"}
+        """Measured results of the detector evaluation (held-out simulator runs), or its status."""
+        return evaluation.status()
+
+    @app.post("/metrics/run")
+    def metrics_run():
+        """Re-run the evaluation in the background (about 30 seconds). Poll GET /metrics for the result."""
+        return {"started": evaluation.start()}
 
     @app.websocket("/ws/telemetry")
     async def ws_telemetry(ws: WebSocket, district: str | None = None):

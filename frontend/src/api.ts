@@ -26,3 +26,6 @@ export const startScenario = (name: string, district?: string) => post(`/scenari
 export const stopScenario = (district?: string) => post(`/scenario/stop${districtQuery(district)}`);
 export const approveResponse = (id: string, district?: string) =>
   post(`/incident/${id}/approve-response${districtQuery(district)}`) as Promise<Incident>;
+
+export const getMetrics = () => call<import("./metrics/types").Metrics>("/metrics");
+export const runMetrics = () => post("/metrics/run") as Promise<{ started: boolean }>;

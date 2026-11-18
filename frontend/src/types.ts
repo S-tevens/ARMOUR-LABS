@@ -47,6 +47,8 @@ export interface Scores {
   controller: number;
   process: number;
   twin: number;
+  ml: number;
+  invariants: number;
 }
 
 export interface Evidence {
