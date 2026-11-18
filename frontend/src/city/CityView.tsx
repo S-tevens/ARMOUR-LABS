@@ -2,6 +2,7 @@ import { useState } from "react";
 import SimulatorCard from "../components/SimulatorCard";
 import type { Incident } from "../types";
 import CityRealMap from "./CityRealMap";
+import City3DMap from "./City3DMap";
 import DistrictCard from "./DistrictCard";
 import ImpactStrip from "./ImpactStrip";
 import LocalGrid from "./LocalGrid";
@@ -24,6 +25,7 @@ export default function CityView({
 }) {
   const { layout, state } = stream;
   const [selected, setSelected] = useState<string | null>(null);
+  const [mapMode, setMapMode] = useState<"3d" | "2d">("3d");
   if (!layout || !state) {
     return <p className="empty">{stream.connected ? "Loading the grid…" : "Waiting for the backend…"}</p>;
   }
@@ -47,8 +49,9 @@ export default function CityView({
       <div className="citystage">
         <WhatsHappening state={state} incident={active} onSelect={setSelected} />
 
-        <section className={`mapwrap real ${state.status === "incident" ? "alarm" : ""}`} aria-label="City map">
-          <CityRealMap layout={layout} state={state} selected={selected} onSelect={setSelected} />
+        <section className={`mapwrap real ${mapMode === "3d" ? "spatial" : ""} ${state.status === "incident" ? "alarm" : ""}`} aria-label="City map">
+          <div className="map-mode" aria-label="Map view"><button aria-pressed={mapMode === "3d"} onClick={() => setMapMode("3d")}>3D city</button><button aria-pressed={mapMode === "2d"} onClick={() => setMapMode("2d")}>2D map</button></div>
+          {mapMode === "3d" ? <City3DMap layout={layout} state={state} selected={selected} onSelect={setSelected} onFallback={() => setMapMode("2d")} /> : <CityRealMap layout={layout} state={state} selected={selected} onSelect={setSelected} />}
           {active && (
             <div className="alert glass" role="alert">
               <b>{CAUSE[active.classification]}</b>
@@ -58,11 +61,10 @@ export default function CityView({
             </div>
           )}
           <ul className="legend-map" aria-label="Legend">
-            <li><i className="dot green" /> Supplied</li>
+            <li><i className={`dot ${mapMode === "3d" ? "cyan" : "green"}`} /> Supplied</li>
             <li><i className="dot amber" /> Needs attention</li>
             <li><i className="dot red" /> Without power</li>
-            <li><i className="ln solid" /> Mapped line</li>
-            <li><i className="ln dashed" /> Inferred tie</li>
+            {mapMode === "2d" && <><li><i className="ln solid" /> Mapped line</li><li><i className="ln dashed" /> Inferred tie</li></>}
           </ul>
           {selected && <LocalGrid layout={layout} state={state} id={selected} onClose={() => setSelected(null)} onOpen={onOpenSubstation} />}
         </section>
