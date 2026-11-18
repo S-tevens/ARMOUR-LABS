@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { approveResponse, getScenarios, startScenario, stopScenario } from "./api";
-import { approveCityResponse, getCityScenarios, startCityScenario, stopCityScenario } from "./city/api";
+import { approveResponse, getExplanation, getScenarios, startScenario, stopScenario } from "./api";
+import { approveCityResponse, getCityExplanation, getCityScenarios, startCityScenario, stopCityScenario } from "./city/api";
 import CityView from "./city/CityView";
 import GridGraphPanel from "./city/GridGraph";
 import type { CityScenarioInfo } from "./city/types";
@@ -195,12 +195,12 @@ export default function App() {
           {cityIncidents.length > 0 && (
             <>
               <h2 className="section-title">City incidents</h2>
-              <IncidentList incidents={cityIncidents} onApprove={(id) => run(() => approveCityResponse(id))} />
+              <IncidentList incidents={cityIncidents} onApprove={(id) => run(() => approveCityResponse(id))} explain={getCityExplanation} />
             </>
           )}
           <Breadcrumb />
           <h2 className="section-title">{districtName} substation incidents</h2>
-          <IncidentList incidents={incidents} onApprove={(id) => run(() => approveResponse(id, district))} />
+          <IncidentList incidents={incidents} onApprove={(id) => run(() => approveResponse(id, district))} explain={(id) => getExplanation(id, district)} />
         </main>
       )}
     </div>

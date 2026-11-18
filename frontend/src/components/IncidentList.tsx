@@ -1,9 +1,11 @@
+import type { Explanation } from "../api";
 import type { Incident } from "../types";
+import PlainWords from "./PlainWords";
 
 const STEPS: Incident["status"][] = ["open", "recovering", "recovered"];
 const STEP_LABEL: Record<string, string> = { open: "Detected", recovering: "Recovering", recovered: "Recovered", unresolved: "Unresolved" };
 
-export default function IncidentList({ incidents, onApprove }: { incidents: Incident[]; onApprove: (id: string) => void }) {
+export default function IncidentList({ incidents, onApprove, explain }: { incidents: Incident[]; onApprove: (id: string) => void; explain: (id: string) => Promise<Explanation> }) {
   if (incidents.length === 0) {
     return (
       <section className="glass incidents">
@@ -33,6 +35,7 @@ export default function IncidentList({ incidents, onApprove }: { incidents: Inci
                 <li key={s} className={k < at ? "done" : k === at ? `now ${s}` : ""}>{STEP_LABEL[s]}</li>
               ))}
             </ol>
+            <PlainWords incident={i} load={explain} />
             <ul className="evidence">
               {i.evidence.map((e, k) => (
                 <li key={k}><span className={`tag ${e.tag}`}>{e.tag}</span>{e.text}</li>

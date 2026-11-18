@@ -68,6 +68,7 @@ Each message is an envelope `{ "type": ..., "data": ... }`. Types:
 | POST | `/incident/{id}/approve-response` | simulated containment; status becomes `recovering`, then `recovered` once checks pass |
 | GET | `/incidents/{id}/replay` | recorded events/telemetry around the incident, from the event log |
 | GET | `/recovery` | latest recovery verification report (`state` idle/recovering/recovered/unresolved, per-variable limits, seconds in range) plus the containment actions taken |
+| GET | `/incidents/{id}/explanation` | plain-language summary `{text, source (template/gemini), model, pending, gemini_configured}`; also `GET /city/incidents/{id}/explanation`. See docs/explanations.md |
 | GET | `/metrics` | evaluation results: `status` (`ok`, `running`, `error`, `not_computed`), `detectors[]`, `scenarios[]`, `protocol`, `training`, `fresh_check`, `limitations`, `source`. See docs/evaluation.md |
 | POST | `/metrics/run` | recompute the evaluation in the background (about 30 s); returns `{started}`, false if one is already running |
 

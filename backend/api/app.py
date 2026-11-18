@@ -17,6 +17,7 @@ from api.city_runtime import CityRuntime
 from api.runtime import Runtime
 from detect.bundle import get_bundle
 from evaluation.service import EvaluationService
+from explain.service import ExplanationService
 from sim.scenarios import SCENARIO_INFO
 
 
@@ -26,7 +27,7 @@ class ScenarioRequest(BaseModel):
 
 
 def create_app(autostart: bool | None = None, db_path: str | None = None, city: str | None = None,
-               ml: bool | None = None, evaluation_path=None) -> FastAPI:
+               ml: bool | None = None, evaluation_path=None, explainer=None) -> FastAPI:
     if autostart is None:
         autostart = os.getenv("ARMOUR_AUTOSTART", "1") == "1"
     if ml is None:
@@ -60,6 +61,7 @@ def create_app(autostart: bool | None = None, db_path: str | None = None, city: 
     app.state.runtime = runtime
     app.state.city = city
     evaluation = EvaluationService(evaluation_path) if evaluation_path else EvaluationService()
+    explanations = explainer or ExplanationService()
     app.state.evaluation = evaluation
     app.add_middleware(
         CORSMiddleware,
@@ -102,6 +104,14 @@ def create_app(autostart: bool | None = None, db_path: str | None = None, city: 
             return unit(district).approve_response(incident_id).model_dump()
         except KeyError:
             raise HTTPException(404, "unknown incident")
+
+    @app.get("/incidents/{incident_id}/explanation")
+    def explanation(incident_id: str, district: str | None = None):
+        """Plain-language summary of an incident: a template, or Gemini when a key is set (see docs/explanations.md)."""
+        inc = unit(district).incidents.incidents.get(incident_id)
+        if inc is None:
+            raise HTTPException(404, "unknown incident")
+        return explanations.explain(inc.model_dump())
 
     @app.get("/incidents/{incident_id}/replay")
     def replay(incident_id: str, district: str | None = None):
@@ -169,6 +179,13 @@ def create_app(autostart: bool | None = None, db_path: str | None = None, city: 
     @app.get("/city/incidents")
     def city_incidents():
         return [i.model_dump() for i in city.incidents.incidents.values()]
+
+    @app.get("/city/incidents/{incident_id}/explanation")
+    def city_explanation(incident_id: str):
+        inc = city.incidents.incidents.get(incident_id)
+        if inc is None:
+            raise HTTPException(404, "unknown incident")
+        return explanations.explain(inc.model_dump())
 
     @app.post("/city/incident/{incident_id}/approve-response")
     def city_approve(incident_id: str):

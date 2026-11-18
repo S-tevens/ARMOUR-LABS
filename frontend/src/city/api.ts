@@ -16,3 +16,5 @@ export const getCityScenarios = () => call<CityScenarioInfo[]>("/city/scenarios"
 export const startCityScenario = (name: string) => post("/city/scenario/start", { name });
 export const stopCityScenario = () => post("/city/scenario/stop");
 export const approveCityResponse = (id: string) => post(`/city/incident/${id}/approve-response`) as Promise<Incident>;
+
+export const getCityExplanation = (id: string) => call<import("../api").Explanation>(`/city/incidents/${id}/explanation`);

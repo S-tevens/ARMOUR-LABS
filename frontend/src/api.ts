@@ -29,3 +29,6 @@ export const approveResponse = (id: string, district?: string) =>
 
 export const getMetrics = () => call<import("./metrics/types").Metrics>("/metrics");
 export const runMetrics = () => post("/metrics/run") as Promise<{ started: boolean }>;
+
+export interface Explanation { text: string; source: "template" | "gemini"; model: string | null; pending: boolean; gemini_configured: boolean; note?: string }
+export const getExplanation = (id: string, district?: string) => call<Explanation>(`/incidents/${id}/explanation${districtQuery(district)}`);

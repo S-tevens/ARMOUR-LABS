@@ -35,6 +35,7 @@ This is the base project: a working end-to-end system you can run today.
 | **3D city map** (City tab default, 2D map kept as a toggle): 3D buildings, streets and water from OpenFreeMap/OpenStreetMap tiles under the live grid, with hospitals, metro and other facilities. Building heights are source values, not surveys. Needs internet; falls back to the 2D map | Working |
 | Detectors: fixed limits, unauthorised-message rule, twin residuals, physics checks (fitted tolerances) and a trained anomaly model (autoencoder chosen on validation runs) | Working |
 | Incident classification (attack, fault, unknown) | City: rule-based v0 (executable rule table). Substation: placeholder, always "unknown" |
+| **Plain-language incident explanations** ("In plain words" on every incident): a template that always works, and Gemini when `GEMINI_API_KEY` is set, with a check that the answer contains no numbers outside the evidence | Working |
 | **Metrics tab** and `/metrics`: 9 detectors compared on 39 held-out simulated runs, per-scenario matrix, fresh-seed check, limitations | Working (simulator data only) |
 
 Placeholders are marked `PLACEHOLDER` or `TODO` in the code. The live detector scores come from the running detectors. Measured results are on the Metrics tab and are labelled as coming from the custom simulator, not from real grid data. See [docs/evaluation.md](docs/evaluation.md).
@@ -134,7 +135,7 @@ Press `Ctrl+C` in each terminal.
 
 ```bash
 cd backend
-python -m pytest            # backend: 74 tests (about a minute)
+python -m pytest            # backend: 83 tests (about a minute)
 cd ../frontend
 npm run build               # frontend: type-check and production build
 ```
@@ -161,6 +162,8 @@ Set these environment variables before starting the backend (all optional):
 | `ARMOUR_DB` | in memory | Path of an SQLite file, to keep the event log between restarts. |
 | `ARMOUR_AUTOSTART` | `1` | Set `0` to stop the simulation starting by itself (used by tests). |
 | `ARMOUR_ML` | `1` | Set `0` to skip training the ML detectors at start-up (about 10 s). Live ML and physics scores then stay 0. |
+| `GEMINI_API_KEY` | not set | Turns on Gemini-written incident summaries. Set it in your own terminal, never in a file. Without it the template is used. See [docs/explanations.md](docs/explanations.md). |
+| `GEMINI_MODEL` | automatic | Use one specific Gemini model |
 | `ARMOUR_CITY` | `osm` | Grid layout: `osm` (real Bengaluru topology) or `synthetic` (small fictional test network). |
 
 For the frontend, `VITE_API_URL` (default `http://localhost:8000`) points the dashboard at a backend on another address.
@@ -244,6 +247,7 @@ backend/
   sim/                substation model, scenarios, engine, containment, recovery, dataset generator
   twin/               model-based digital twin
   detect/             detectors: limits, features, physics checks, ML models, training bundle, alert rule
+  explain/            plain-language incident explanations (template and Gemini)
   evaluation/         evaluation protocol, metrics, results.json, background service
   incident/           incident manager (placeholder classification)
   db/                 append-only SQLite event log
@@ -260,6 +264,7 @@ docs/contracts.md     message and API contracts
 ## Documents
 
 - [research_draft.md](research_draft.md): how the project relates to the research paper (what we took, changed and added), our results and limitations.
+- [docs/explanations.md](docs/explanations.md): the plain-language incident summaries and how they are kept honest.
 - [docs/city-3d.md](docs/city-3d.md): the 3D city map, its data sources and limits.
 - [docs/evaluation.md](docs/evaluation.md): detectors, evaluation protocol and what the numbers do not show.
 - [ARMOUR_LABS_CITY_LAYER_PLAN.md](ARMOUR_LABS_CITY_LAYER_PLAN.md): the city layer plan, with per-person tasks and the frontend clarity rules.
