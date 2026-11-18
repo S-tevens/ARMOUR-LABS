@@ -8,6 +8,7 @@ The page always says which writer produced the text. The call runs in the backgr
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -42,7 +43,7 @@ DETECTORS = {
 SYSTEM = (
     "You explain power-grid incidents to an operator who is not a security expert. Use ONLY the facts in the JSON the user "
     "sends. Never invent numbers, device names, causes, times or actions. Do not use any number that is not in the facts. "
-    "Write 3 or 4 short sentences of plain English, no markdown, no bullet points. Say what happened, why the system thinks "
+    "Write every number and address exactly as it appears in the facts, as digits (for example 775,000 and 10.0.0.66); never spell numbers or addresses out in words. Write 3 or 4 short sentences of plain English, no markdown, no bullet points. Say what happened, why the system thinks "
     "so, and what the next step is, using the given status. If the cause is unknown, say that clearly. Do not call "
     "something an attack unless the classification says attack."
 )
@@ -88,10 +89,13 @@ def _sentence(text: str) -> str:
 
 
 _NUM = re.compile(r"\d+(?:\.\d+)?")
+_SPELLED = re.compile(r"\b(?:hundred|thousand|million|billion|dot)\b", re.I)  # numbers or addresses written out in words
 
 
 def grounded(answer: str, f: dict) -> bool:
-    """Every number in the answer must already be in the facts."""
+    """Every number in the answer must already be in the facts, and none may be spelled out in words."""
+    if _SPELLED.search(answer):
+        return False
     allowed = set(_NUM.findall(json.dumps(f)))
     return all(n in allowed for n in _NUM.findall(answer))
 
@@ -139,7 +143,8 @@ class ExplanationService:
 
     @staticmethod
     def _key(inc: dict) -> str:
-        return f"{inc['id']}|{inc['status']}|{inc['classification']}|{len(inc.get('evidence', []))}"
+        digest = hashlib.sha1(json.dumps(facts(inc), sort_keys=True).encode()).hexdigest()[:12]  # same id after a reset, different content
+        return f"{inc['id']}|{inc['status']}|{digest}"
 
     def explain(self, inc: dict) -> dict:
         """The best explanation available now. `pending` is true while a Gemini answer is on its way."""

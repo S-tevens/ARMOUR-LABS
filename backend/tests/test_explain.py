@@ -49,6 +49,8 @@ def test_grounding_rejects_invented_numbers():
     f = facts(INC)
     assert grounded("The hospital feeder reads 0 kW instead of 180 kW.", f)
     assert not grounded("About 250 kW of load was lost.", f)
+    assert not grounded("The feeder lost seven hundred kW.", f)  # numbers written out in words are rejected
+    assert not grounded("Commands came from ten dot zero dot zero dot sixty-six.", f)
 
 
 def test_gemini_answer_is_used_when_it_is_grounded(monkeypatch):
@@ -122,3 +124,10 @@ def test_explanation_endpoint_for_a_real_incident(monkeypatch):
         iid = c.get("/incidents").json()[0]["id"]
         out = c.get(f"/incidents/{iid}/explanation").json()
         assert out["source"] == "template" and "IED-03" in out["text"] and out["pending"] is False
+
+
+def test_a_reset_city_that_reuses_an_incident_id_does_not_get_a_stale_explanation(monkeypatch):
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    svc = ExplanationService()
+    other = {**INC, "evidence": [{"type": "network", "text": "A different event entirely.", "tag": "observed"}]}
+    assert svc.explain(INC)["text"] != svc.explain(other)["text"]

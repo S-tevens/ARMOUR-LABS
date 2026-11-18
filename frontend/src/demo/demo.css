@@ -1,0 +1,27 @@
+/* ---------- Guided demo ---------- */
+.topright { justify-self: end; display: flex; align-items: center; gap: 10px; }
+.btn.demo-start { display: inline-flex; align-items: center; gap: 8px; padding: 9px 18px; }
+.btn.demo-start::before { content: ""; border-style: solid; border-width: 5px 0 5px 8px; border-color: transparent transparent transparent #fff; }
+.demo-start:disabled { opacity: 0.55; cursor: default; }
+
+.demo { position: fixed; z-index: 40; left: 50%; bottom: 18px; transform: translateX(-50%); width: min(760px, calc(100vw - 32px)); max-height: calc(100vh - 110px); overflow: auto; padding: 16px 20px 14px; box-shadow: 0 24px 60px -20px rgba(52, 78, 140, 0.5), var(--shadow); }
+.demo h3 { margin: 10px 0 4px; font-size: 18px; }
+.demo-text { margin: 0 0 10px; line-height: 1.5; }
+.demo-steps { display: flex; gap: 6px; list-style: none; margin: 0; padding: 0; }
+.demo-steps li { flex: 1; text-align: center; font-size: 12px; font-weight: 600; padding: 6px 4px; border-radius: 999px; background: var(--blue-soft); color: var(--slate); }
+.demo-steps li.done { background: rgba(43, 179, 106, 0.16); color: #1d7f4a; }
+.demo-steps li.now { background: var(--blue); color: #fff; }
+.demo-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.demo-chips span { background: #fff; border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+.demo-chips b { font-variant-numeric: tabular-nums; }
+.demo-evidence, .demo-checks, .demo-summary { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
+.demo-evidence .tag { margin-right: 8px; }
+.demo-checks li i { display: inline-block; width: 18px; font-style: normal; color: var(--slate); }
+.demo-checks li.ok i { color: var(--green); font-weight: 800; }
+.demo-summary li { background: #fff; border: 1px solid var(--line); border-radius: var(--r-md); padding: 8px 12px; }
+.demo-summary b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.demo-controls { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+.btn.quiet { background: transparent; color: var(--slate); box-shadow: none; border: 1px solid var(--line); }
+.demo-controls .btn:not(.primary):not(.quiet) { background: #fff; color: var(--ink); box-shadow: none; border: 1px solid var(--line); }
+@media (max-width: 900px) { .topright { justify-self: start; flex-wrap: wrap; } }
+.btn.demo-start { white-space: nowrap; }

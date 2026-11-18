@@ -35,6 +35,7 @@ This is the base project: a working end-to-end system you can run today.
 | **3D city map** (City tab default, 2D map kept as a toggle): 3D buildings, streets and water from OpenFreeMap/OpenStreetMap tiles under the live grid, with hospitals, metro and other facilities. Building heights are source values, not surveys. Needs internet; falls back to the 2D map | Working |
 | Detectors: fixed limits, unauthorised-message rule, twin residuals, physics checks (fitted tolerances) and a trained anomaly model (autoencoder chosen on validation runs) | Working |
 | Incident classification (attack, fault, unknown) | City: rule-based v0 (executable rule table). Substation: placeholder, always "unknown" |
+| **Guided demo** (button, top right): runs the whole story on the city in about two minutes, narrated: normal, attack, detect, explain, contain, recover, with a summary of impact and times. See [docs/demo.md](docs/demo.md) | Working |
 | **Plain-language incident explanations** ("In plain words" on every incident): a template that always works, and Gemini when `GEMINI_API_KEY` is set, with a check that the answer contains no numbers outside the evidence | Working |
 | **Metrics tab** and `/metrics`: 9 detectors compared on 39 held-out simulated runs, per-scenario matrix, fresh-seed check, limitations | Working (simulator data only) |
 
@@ -106,6 +107,8 @@ Open **http://localhost:5173** in your browser. The status pill at the top right
 
 ### 5. Try the demo
 
+**Quickest way: press the Guided demo button** (top right). It plays the whole story on the city, narrated, in about two minutes (see [docs/demo.md](docs/demo.md)). Or explore by hand:
+
 **Start with the City tab.** You see a real map of Bengaluru with the grid on top (green dots are substations, solid lines are mapped power lines, dashed lines are inferred ties). In the **City simulator** card, run **Coordinated substation trip**. Within seconds the status turns red: three central substations go dark with a red marker, the headline strip shows how many people are without power and how many hospitals are on backup, and "What's happening" lists the likely cause and the most urgent consequences in plain sentences. **Click a dark substation**: an isometric view of its local grid opens on the map, and the side card lists what it supplies. Click **Approve containment**: the source is blocked and substations are restored hospitals first, with a live checklist; the grid is marked **Recovered** only after every check holds for 10 seconds. Then try **Load-altering attack**: demand surges, one overloaded line trips, and a chain of substations in the west of the city goes dark (a cascade). Open the **Network** tab, press **Expand**, and use **Replay** or the slider to watch the failure spread one step at a time. The look-alikes (**Planned line maintenance**, **Hot-evening demand peak**) raise no incident, and **Line fault** is classified as equipment, not an attack. Backup time and energy run accelerated (1 second is 1 minute).
 
 **Then drill down.** Click a district and choose **Open substation view** for its detailed microgrid:
@@ -135,7 +138,7 @@ Press `Ctrl+C` in each terminal.
 
 ```bash
 cd backend
-python -m pytest            # backend: 83 tests (about a minute)
+python -m pytest            # backend: 84 tests (about a minute)
 cd ../frontend
 npm run build               # frontend: type-check and production build
 ```
@@ -256,7 +259,7 @@ backend/
   city/data/          bengaluru_osm.json (real topology, simulated electrical model) and synthetic.json (test fixture)
   city/tools/         fetch_osm.py and build_osm_city.py: rebuild the grid data from OpenStreetMap
   tests/              backend tests
-frontend/             React + TypeScript dashboard (src/city/ is the city view)
+frontend/             React + TypeScript dashboard (src/city/ is the city view, src/demo/ the guided demo)
 data/                 dataset notes (generated files are not committed)
 docs/contracts.md     message and API contracts
 ```
@@ -264,6 +267,7 @@ docs/contracts.md     message and API contracts
 ## Documents
 
 - [research_draft.md](research_draft.md): how the project relates to the research paper (what we took, changed and added), our results and limitations.
+- [docs/demo.md](docs/demo.md): the guided demo and what it does.
 - [docs/explanations.md](docs/explanations.md): the plain-language incident summaries and how they are kept honest.
 - [docs/city-3d.md](docs/city-3d.md): the 3D city map, its data sources and limits.
 - [docs/evaluation.md](docs/evaluation.md): detectors, evaluation protocol and what the numbers do not show.

@@ -15,6 +15,8 @@ import SensorStrip from "./components/SensorStrip";
 import SimulatorCard from "./components/SimulatorCard";
 import TwinChart from "./components/TwinChart";
 import MetricsView from "./metrics/MetricsView";
+import DemoPanel from "./demo/DemoPanel";
+import { useDemo } from "./demo/useDemo";
 import { useStream } from "./useStream";
 import type { ScenarioInfo } from "./types";
 
@@ -38,6 +40,7 @@ function Callout({ at, title, children, tone = "", below = false }: { at: { left
 
 export default function App() {
   const city = useCityStream();
+  const demo = useDemo(city);
   const [tab, setTab] = useState<Tab>("city");
   const [district, setDistrict] = useState<string | undefined>(undefined); // undefined = the featured district
   const s = useStream(district);
@@ -94,8 +97,15 @@ export default function App() {
             </button>
           ))}
         </nav>
-        <div className={`state glass st-${pill}`} role="status"><i />{pillText}</div>
+        <div className="topright">
+          <button className="btn primary demo-start" disabled={demo.phase !== "idle" && demo.phase !== "done" || !city.connected}
+            title="Runs the whole story on the city: normal, attack, detect, explain, contain, recover"
+            onClick={() => { setTab("city"); demo.start(); }}>Guided demo</button>
+          <div className={`state glass st-${pill}`} role="status"><i />{pillText}</div>
+        </div>
       </header>
+
+      <DemoPanel demo={demo} stream={city} />
 
       {error && <div className="error" role="alert">{error}</div>}
 
