@@ -30,6 +30,7 @@ This is the base project: a working end-to-end system you can run today.
 | Live dashboard (isometric substation, relays, twin chart, detector scores, network graph, incidents) | Working |
 | **City layer:** real Bengaluru substations, mapped line routes, hospitals and metro from OpenStreetMap on a real map; linear power flow, line overloads and cascades, hospital backup timers, impact counters, 6 city scenarios, priority restoration, city twin, rule-based classification and campaign grouping, recovery verification | Working |
 | **Grid graph and domino replay** (Network tab, expandable) | Working |
+| **3D city map** (City tab default, 2D map kept as a toggle): 3D buildings, streets and water from OpenFreeMap/OpenStreetMap tiles under the live grid, with hospitals, metro and other facilities. Building heights are source values, not surveys. Needs internet; falls back to the 2D map | Working |
 | Detectors: fixed limits, unauthorised-message rule, twin residuals, physics checks (fitted tolerances) and a trained anomaly model (autoencoder chosen on validation runs) | Working |
 | Incident classification (attack, fault, unknown) | City: rule-based v0 (executable rule table). Substation: placeholder, always "unknown" |
 | **Metrics tab** and `/metrics`: 9 detectors compared on 39 held-out simulated runs, per-scenario matrix, fresh-seed check, limitations | Working (simulator data only) |
@@ -228,7 +229,7 @@ Full contracts, endpoints and message shapes: [docs/contracts.md](docs/contracts
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, TypeScript, Vite, SVG |
+| Frontend | React 18, TypeScript, Vite, SVG, Leaflet (2D map), MapLibre GL and three.js (3D map) |
 | Backend | Python, FastAPI, WebSockets, NumPy |
 | Storage | SQLite (append-only event log, also the source for replay) |
 | ML | scikit-learn (PCA autoencoder, Isolation Forest, one-class SVM) |
@@ -256,6 +257,7 @@ docs/contracts.md     message and API contracts
 
 ## Documents
 
+- [docs/city-3d.md](docs/city-3d.md): the 3D city map, its data sources and limits.
 - [docs/evaluation.md](docs/evaluation.md): detectors, evaluation protocol and what the numbers do not show.
 - [ARMOUR_LABS_CITY_LAYER_PLAN.md](ARMOUR_LABS_CITY_LAYER_PLAN.md): the city layer plan, with per-person tasks and the frontend clarity rules.
 - [docs/city-contracts.md](docs/city-contracts.md): city messages and endpoints.
@@ -275,6 +277,8 @@ docs/contracts.md     message and API contracts
 | Simulated | Loads (from the number of mapped 66 kV substations each node would feed), populations, line ratings (calibrated so normal operation sits at 45-68 % loading), which hospital or metro station a substation supplies (by proximity), and every attack | This project |
 
 Nothing here is BESCOM or KPTCL data, and the simulated outages are hypothetical.
+
+**3D map.** The 3D view loads its style and vector tiles at run time from [OpenFreeMap](https://openfreemap.org) (OpenMapTiles data from OpenStreetMap), so it needs an internet connection; the attribution stays on the map. Building heights come from the tile source and can be estimates. See [docs/city-3d.md](docs/city-3d.md).
 
 **Licence and attribution.** Map data (c) OpenStreetMap contributors, available under the [Open Database Licence (ODbL)](https://www.openstreetmap.org/copyright). `backend/city/data/bengaluru_osm.json` is a derived database: keep the attribution, and if you redistribute an adapted version, share it under the same licence. The basemap tiles come from the public OpenStreetMap tile servers, which are fine for a demo but not for heavy use; for production, host your own tiles or use a tile provider.
 
