@@ -1,3 +1,4 @@
+import Meter from "./Meter";
 import type { Scores } from "../types";
 
 const ROWS: { key: "network" | "controller" | "process" | "twin"; label: string; note: string }[] = [
@@ -7,7 +8,7 @@ const ROWS: { key: "network" | "controller" | "process" | "twin"; label: string;
   { key: "twin", label: "Digital twin", note: "Distance from expected state" },
 ];
 
-const tone = (v: number) => (v >= 0.8 ? "red" : v >= 0.4 ? "amber" : "green");
+const tone = (v: number): "green" | "amber" | "red" => (v >= 0.8 ? "red" : v >= 0.4 ? "amber" : "green");
 
 export default function ScoreBars({ scores }: { scores: Scores | null }) {
   return (
@@ -21,11 +22,7 @@ export default function ScoreBars({ scores }: { scores: Scores | null }) {
         return (
           <div className="score-row" key={r.key}>
             <div className="score-label"><b>{r.label}</b><span>{r.note}</span></div>
-            <div className="track" role="meter" aria-valuemin={0} aria-valuemax={1} aria-valuenow={v} aria-label={r.label}>
-              <div className={`fill ${tone(v)}`} style={{ width: `${v * 100}%` }} />
-              <i className="threshold" title="Alert threshold 0.8" />
-            </div>
-            <span className="num">{v.toFixed(2)}</span>
+            <Meter label="" display={v.toFixed(2)} value={v} tone={tone(v)} threshold={0.8} />
           </div>
         );
       })}

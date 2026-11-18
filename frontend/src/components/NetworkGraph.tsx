@@ -55,6 +55,8 @@ export default function NetworkGraph({ t, links }: { t: Telemetry | null; links:
           return (
             <g key={p.id}>
               <Link d={`M ${sx} ${sy} C ${mid} ${sy}, ${mid} ${cy}, ${PX} ${cy}`} active={s.total > 0} />
+              <circle cx={sx} cy={sy} r={4} className="gdot" />
+              <circle cx={PX} cy={cy} r={4} className={`gdot ${atk.bad > 0 ? "bad" : ""}`} />
               <text x={mid - 34} y={(sy + cy) / 2 - 6} className="glabel">{s.total} messages</text>
               {atk.bad > 0 && (
                 <g>
