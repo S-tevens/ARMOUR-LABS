@@ -1,0 +1,10 @@
+# Replace with each person's GitHub username once collaborators are added.
+# Format: <path> @username
+* @S-tevens
+# /frontend/            @P1-username
+# /backend/sim/         @P2-username
+# /backend/twin/        @P2-username
+# /backend/detect/      @P3-username
+# /backend/incident/    @P3-username
+# /backend/api/         @P3-username
+# /backend/db/          @P3-username
