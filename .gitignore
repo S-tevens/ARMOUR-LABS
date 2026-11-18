@@ -17,5 +17,3 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Local-only working docs
-ARMOUR_LABS_TASK_DISTRIBUTION.md
