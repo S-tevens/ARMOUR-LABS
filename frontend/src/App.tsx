@@ -1,130 +1,125 @@
 import { useEffect, useState } from "react";
 import { approveResponse, getScenarios, startScenario, stopScenario } from "./api";
-import PlantView from "./components/PlantView";
+import ControllerRail from "./components/ControllerRail";
+import EventTable from "./components/EventTable";
+import IncidentList from "./components/IncidentList";
+import IsoPlant, { pct } from "./components/IsoPlant";
+import NetworkGraph from "./components/NetworkGraph";
+import ScoreBars from "./components/ScoreBars";
+import SensorStrip from "./components/SensorStrip";
+import SimulatorCard from "./components/SimulatorCard";
+import TwinChart from "./components/TwinChart";
 import { useStream } from "./useStream";
-import type { Incident, ScenarioInfo } from "./types";
+import type { ScenarioInfo } from "./types";
 
-const VARS = ["pressure", "flow", "tank1_level", "tank2_level", "temperature"] as const;
+type Tab = "dashboard" | "network" | "incidents";
+const TABS: { id: Tab; label: string }[] = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "network", label: "Network" },
+  { id: "incidents", label: "Incidents" },
+];
 
-function ScoreBar({ label, value }: { label: string; value: number }) {
-  const cls = value >= 0.8 ? "red" : value >= 0.4 ? "amber" : "green";
+function Callout({ at, title, children, tone = "" }: { at: { left: string; top: string }; title: string; children: React.ReactNode; tone?: string }) {
   return (
-    <div className="score">
-      <span>{label}</span>
-      <div className="bar"><div className={`fill ${cls}`} style={{ width: `${value * 100}%` }} /></div>
-      <b>{value.toFixed(2)}</b>
+    <div className={`callout glass ${tone}`} style={at}>
+      <b>{title}</b>
+      <span>{children}</span>
     </div>
   );
 }
 
 export default function App() {
   const s = useStream();
+  const [tab, setTab] = useState<Tab>("dashboard");
   const [scenarios, setScenarios] = useState<ScenarioInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getScenarios().then(setScenarios).catch(() => setError("Backend not reachable. Start it on port 8000."));
+    getScenarios().then(setScenarios).catch(() => setError("Can't reach the backend on port 8000. Start it with: uvicorn main:app"));
   }, []);
 
   const incidents = Object.values(s.incidents).sort((a, b) => b.t_start - a.t_start);
-  const active: Incident | undefined = incidents.find((i) => i.status !== "recovered" && i.status !== "unresolved");
-  const status = !s.connected ? "OFFLINE" : active ? "INCIDENT" : "NORMAL";
-
-  const run = (fn: () => Promise<unknown>) => fn().catch((e) => setError(String(e)));
+  const active = incidents.find((i) => i.status !== "recovered" && i.status !== "unresolved");
+  const state = !s.connected ? "offline" : active ? "incident" : "normal";
+  const stateText = { offline: "Backend offline", incident: "Incident in progress", normal: "Plant normal" }[state];
+  const run = (fn: () => Promise<unknown>) => fn().then(() => setError(null)).catch((e) => setError(String(e)));
+  const t = s.telemetry;
 
   return (
-    <div className="app">
-      <header>
-        <h1>ARMOUR LABS</h1>
-        <span className={`status st-${status.toLowerCase()}`}>SYSTEM STATUS: {status}</span>
-      </header>
-      {error && <div className="error">{error}</div>}
-
-      <main>
-        <section className="panel wide">
-          <h2>Live plant view</h2>
-          <PlantView t={s.telemetry} />
-        </section>
-
-        <section className="panel">
-          <h2>Threat monitor <small>baseline detector, illustrative</small></h2>
-          {s.scores ? (
-            <>
-              <ScoreBar label="Network" value={s.scores.network} />
-              <ScoreBar label="Controller" value={s.scores.controller} />
-              <ScoreBar label="Process" value={s.scores.process} />
-              <ScoreBar label="Twin residual" value={s.scores.twin} />
-            </>
-          ) : <div className="empty">No scores yet</div>}
-          <div className="count">Active incidents: <b>{active ? 1 : 0}</b></div>
-        </section>
-
-        <section className="panel">
-          <h2>Attack simulator <small>simulation only</small></h2>
-          <div className="buttons">
-            {scenarios.map((sc) => (
-              <button key={sc.name} className={sc.kind} title={sc.description} onClick={() => run(() => startScenario(sc.name))}>
-                {sc.label}
-              </button>
-            ))}
-            <button onClick={() => run(stopScenario)}>Stop / reset</button>
-          </div>
-        </section>
-
-        <section className="panel">
-          <h2>Digital twin <small>placeholder nominal values</small></h2>
-          <table>
-            <thead><tr><th>Variable</th><th>Expected</th><th>Observed</th><th>Residual</th></tr></thead>
-            <tbody>
-              {s.twin && s.telemetry && VARS.map((v) => {
-                const r = s.twin!.norm_residual[v] ?? 0;
-                return (
-                  <tr key={v} className={Math.abs(r) > 4 ? "bad" : ""}>
-                    <td>{v}</td>
-                    <td>{s.twin!.expected[v].toFixed(2)}</td>
-                    <td>{s.telemetry![v].toFixed(2)}</td>
-                    <td>{s.twin!.residual[v].toFixed(2)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </section>
-
-        <section className="panel">
-          <h2>Network events</h2>
-          <ul className="events">
-            {s.events.slice(0, 12).map((e) => (
-              <li key={e.seq} className={e.authorised ? "" : "bad"}>
-                <code>{e.t.toFixed(0)}s</code> {e.src} → {e.dst} {e.function_code} {e.register}={String(e.value)}
-                {!e.authorised && <b> UNAUTHORISED</b>}
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        <section className="panel wide">
-          <h2>Incidents</h2>
-          {incidents.length === 0 && <div className="empty">No incidents</div>}
-          {incidents.map((i) => (
-            <div key={i.id} className={`incident ${i.status}`}>
-              <div className="inc-head">
-                <b>{i.id}</b> <span className="pill">{i.severity}</span> <span className="pill">{i.classification}</span>
-                <span className="pill">{i.status}</span>
-                {i.affected_devices.length > 0 && <span>Affected: {i.affected_devices.join(", ")}</span>}
-                {i.status === "open" && (
-                  <button onClick={() => run(() => approveResponse(i.id))}>Approve simulated containment</button>
-                )}
-              </div>
-              <ul>
-                {i.evidence.map((e, k) => (
-                  <li key={k}><span className={`tag ${e.tag}`}>{e.tag}</span> {e.text}</li>
-                ))}
-              </ul>
-            </div>
+    <div className="shell">
+      <header className="topbar">
+        <div className="brand">
+          <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+            <path d="M15 2 L26 6 V15 C26 21 21 25.5 15 28 C9 25.5 4 21 4 15 V6 Z" fill="#2F6BFF" />
+            <path d="M15 8 L20 17 H10 Z" fill="#fff" opacity="0.92" />
+          </svg>
+          <span>Armour Labs<small>Water treatment simulation</small></span>
+        </div>
+        <nav className="tabs glass" aria-label="Views">
+          {TABS.map((x) => (
+            <button key={x.id} className={tab === x.id ? "on" : ""} aria-current={tab === x.id ? "page" : undefined} onClick={() => setTab(x.id)}>
+              {x.label}
+              {x.id === "incidents" && active && <i className="badge" />}
+            </button>
           ))}
-        </section>
-      </main>
+        </nav>
+        <div className={`state glass st-${state}`} role="status"><i />{stateText}</div>
+      </header>
+
+      {error && <div className="error" role="alert">{error}</div>}
+
+      {tab === "dashboard" && (
+        <main className="dash">
+          <SensorStrip history={s.history} twin={s.twin} />
+          <div className="stage">
+            <ControllerRail t={t} />
+            <section className={`hero ${active ? "alarm" : ""}`} aria-label="Live plant">
+              {t ? (
+                <>
+                  <IsoPlant t={t} incident={active} />
+                  <Callout at={pct(0, 0, 150)} title="Tank 1">{t.tank1_level.toFixed(1)}% full</Callout>
+                  <Callout at={pct(5, -3.4, 150)} title="Tank 2">{t.tank2_level.toFixed(1)}% full</Callout>
+                  <Callout at={pct(5, 0, 70)} title="Line pressure" tone={t.pressure > 3.5 ? "bad" : ""}>{t.pressure.toFixed(2)} bar</Callout>
+                  <Callout at={pct(5, -1.5, 86)} title={`Valve 1 ${t.valve1 ? "open" : "closed"}`} tone={t.valve1 ? "" : "bad"}>
+                    {t.valve1 ? "PLC-02 normal" : active?.evidence.find((e) => e.type === "unauthorised_event")?.text ?? "Closed outside the schedule"}
+                  </Callout>
+                </>
+              ) : (
+                <p className="empty hero-empty">Waiting for plant telemetry…</p>
+              )}
+              <SimulatorCard
+                scenarios={scenarios}
+                onStart={(n) => run(() => startScenario(n))}
+                onStop={() => run(stopScenario)}
+              />
+              {active && (
+                <div className="alert glass" role="alert">
+                  <b>{active.id}</b> Cause not yet classified
+                  {active.status === "open" && <button className="btn primary" onClick={() => run(() => approveResponse(active.id))}>Approve containment</button>}
+                  {active.status === "recovering" && <span className="muted">Checking recovery…</span>}
+                </div>
+              )}
+            </section>
+          </div>
+          <div className="lower">
+            <TwinChart history={s.history} twinHistory={s.twinHistory} />
+            <ScoreBars scores={s.scores} />
+          </div>
+        </main>
+      )}
+
+      {tab === "network" && (
+        <main className="stack">
+          <NetworkGraph t={t} links={s.links} />
+          <EventTable events={s.events} />
+        </main>
+      )}
+
+      {tab === "incidents" && (
+        <main className="stack">
+          <IncidentList incidents={incidents} onApprove={(id) => run(() => approveResponse(id))} />
+        </main>
+      )}
     </div>
   );
 }
