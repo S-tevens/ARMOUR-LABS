@@ -82,8 +82,8 @@ export default function App() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <img className="brand-logo" src="/logo.png" alt="Armour Labs" height="34" />
-          <small>Power-grid cyber defence simulation</small>
+          <img className="brand-logo" src="/logo.png" alt="Armour Labs" height="26" />
+          <small>Power-grid cyber defence</small>
         </div>
         <nav className="tabs glass" aria-label="Views">
           {TABS.map((x) => (
