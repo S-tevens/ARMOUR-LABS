@@ -1,5 +1,9 @@
 import { useEffect, useState } from "react";
 import { approveResponse, getScenarios, startScenario, stopScenario } from "./api";
+import { approveCityResponse, getCityScenarios, startCityScenario, stopCityScenario } from "./city/api";
+import CityView from "./city/CityView";
+import type { CityScenarioInfo } from "./city/types";
+import { useCityStream } from "./city/useCityStream";
 import ControllerRail from "./components/ControllerRail";
 import EventTable from "./components/EventTable";
 import IncidentList from "./components/IncidentList";
@@ -12,9 +16,10 @@ import TwinChart from "./components/TwinChart";
 import { useStream } from "./useStream";
 import type { ScenarioInfo } from "./types";
 
-type Tab = "dashboard" | "network" | "incidents";
+type Tab = "city" | "dashboard" | "network" | "incidents";
 const TABS: { id: Tab; label: string }[] = [
-  { id: "dashboard", label: "Dashboard" },
+  { id: "city", label: "City" },
+  { id: "dashboard", label: "Substation" },
   { id: "network", label: "Network" },
   { id: "incidents", label: "Incidents" },
 ];
@@ -29,22 +34,46 @@ function Callout({ at, title, children, tone = "", below = false }: { at: { left
 }
 
 export default function App() {
-  const s = useStream();
-  const [tab, setTab] = useState<Tab>("dashboard");
+  const city = useCityStream();
+  const [tab, setTab] = useState<Tab>("city");
+  const [district, setDistrict] = useState<string | undefined>(undefined); // undefined = the featured district
+  const s = useStream(district);
   const [scenarios, setScenarios] = useState<ScenarioInfo[]>([]);
+  const [cityScenarios, setCityScenarios] = useState<CityScenarioInfo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [zoom, setZoom] = useState(1);
 
   useEffect(() => {
     getScenarios().then(setScenarios).catch(() => setError("Can't reach the backend on port 8000. Start it with: uvicorn main:app"));
+    getCityScenarios().then(setCityScenarios).catch(() => undefined);
   }, []);
 
   const incidents = Object.values(s.incidents).sort((a, b) => b.t_start - a.t_start);
   const active = incidents.find((i) => i.status !== "recovered" && i.status !== "unresolved");
-  const state = !s.connected ? "offline" : active ? "incident" : "normal";
-  const stateText = { offline: "Backend offline", incident: "Incident in progress", normal: "Substation normal" }[state];
+  const cityIncidents = Object.values(city.incidents).sort((a, b) => b.t_start - a.t_start);
+  const cityActive = cityIncidents.find((i) => i.status === "open" || i.status === "recovering");
+  const cityStatus = city.state?.status ?? "normal";
+  const featured = city.layout?.featured;
+  const shownDistrict = district ?? featured;
+  const districtName = city.layout?.districts.find((d) => d.id === shownDistrict)?.name ?? "Substation";
+
+  const onCity = tab === "city";
+  const pill = !city.connected && !s.connected ? "offline" : onCity ? cityStatus : active ? "incident" : "normal";
+  const pillText = {
+    offline: "Backend offline", incident: "Incident in progress", attention: "City needs attention",
+    normal: onCity ? "City normal" : "Substation normal",
+  }[pill];
   const run = (fn: () => Promise<unknown>) => fn().then(() => setError(null)).catch((e) => setError(String(e)));
   const t = s.telemetry;
+  const openSubstation = (id: string) => { setDistrict(id); setTab("dashboard"); };
+
+  const Breadcrumb = () => (
+    <nav className="crumbs" aria-label="Breadcrumb">
+      <button onClick={() => setTab("city")}>City</button>
+      <span aria-hidden="true">/</span>
+      <b>{districtName}</b>
+    </nav>
+  );
 
   return (
     <div className="shell">
@@ -54,26 +83,39 @@ export default function App() {
             <path d="M15 2 L26 6 V15 C26 21 21 25.5 15 28 C9 25.5 4 21 4 15 V6 Z" fill="#2F6BFF" />
             <path d="M15 8 L20 17 H10 Z" fill="#fff" opacity="0.92" />
           </svg>
-          <span>Armour Labs<small>Microgrid substation simulation</small></span>
+          <span>Armour Labs<small>Power-grid cyber defence simulation</small></span>
         </div>
         <nav className="tabs glass" aria-label="Views">
           {TABS.map((x) => (
             <button key={x.id} className={tab === x.id ? "on" : ""} aria-current={tab === x.id ? "page" : undefined} onClick={() => setTab(x.id)}>
               {x.label}
               {x.id === "incidents" && active && <i className="badge" />}
+              {x.id === "city" && cityActive && <i className="badge" />}
             </button>
           ))}
         </nav>
-        <div className={`state glass st-${state}`} role="status"><i />{stateText}</div>
+        <div className={`state glass st-${pill}`} role="status"><i />{pillText}</div>
       </header>
 
       {error && <div className="error" role="alert">{error}</div>}
 
+      {tab === "city" && (
+        <CityView
+          stream={city}
+          scenarios={cityScenarios}
+          onStart={(n) => run(() => startCityScenario(n))}
+          onStop={() => run(stopCityScenario)}
+          onApprove={(id) => run(() => approveCityResponse(id))}
+          onOpenSubstation={openSubstation}
+        />
+      )}
+
       {tab === "dashboard" && (
         <main className="dash">
+          <Breadcrumb />
           <section className="pagehead">
             <div className="page-title">
-              <h1>Campus microgrid substation</h1>
+              <h1>{districtName} substation</h1>
               <span className="muted small">Simulated substation, running for {t ? Math.round(t.t) : 0} s</span>
             </div>
             <SensorStrip history={s.history} twin={s.twin} />
@@ -113,13 +155,13 @@ export default function App() {
               </div>
               <SimulatorCard
                 scenarios={scenarios}
-                onStart={(n) => run(() => startScenario(n))}
-                onStop={() => run(stopScenario)}
+                onStart={(n) => run(() => startScenario(n, district))}
+                onStop={() => run(() => stopScenario(district))}
               />
               {active && (
                 <div className="alert glass" role="alert">
                   <b>{active.id}</b> Cause not yet classified
-                  {active.status === "open" && <button className="btn primary" onClick={() => run(() => approveResponse(active.id))}>Approve containment</button>}
+                  {active.status === "open" && <button className="btn primary" onClick={() => run(() => approveResponse(active.id, district))}>Approve containment</button>}
                   {active.status === "recovering" && <span className="muted">Checking recovery…</span>}
                 </div>
               )}
@@ -134,6 +176,7 @@ export default function App() {
 
       {tab === "network" && (
         <main className="stack">
+          <Breadcrumb />
           <NetworkGraph t={t} links={s.links} />
           <EventTable events={s.events} />
         </main>
@@ -141,7 +184,15 @@ export default function App() {
 
       {tab === "incidents" && (
         <main className="stack">
-          <IncidentList incidents={incidents} onApprove={(id) => run(() => approveResponse(id))} />
+          {cityIncidents.length > 0 && (
+            <>
+              <h2 className="section-title">City incidents</h2>
+              <IncidentList incidents={cityIncidents} onApprove={(id) => run(() => approveCityResponse(id))} />
+            </>
+          )}
+          <Breadcrumb />
+          <h2 className="section-title">{districtName} substation incidents</h2>
+          <IncidentList incidents={incidents} onApprove={(id) => run(() => approveResponse(id, district))} />
         </main>
       )}
     </div>

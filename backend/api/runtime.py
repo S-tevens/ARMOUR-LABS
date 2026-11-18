@@ -9,17 +9,20 @@ from db.store import EventStore
 from detect.threshold import ThresholdDetector
 from incident.manager import IncidentManager
 from sim.engine import SimulationEngine
+from sim.plant import PlantParams
 from twin.twin import GridTwin
 
 
 class Runtime:
-    def __init__(self, seed: int = 42, db_path: str = ":memory:", tick_seconds: float = 1.0) -> None:
-        self.engine = SimulationEngine(seed)
-        self.twin = GridTwin()
+    def __init__(self, seed: int = 42, db_path: str = ":memory:", tick_seconds: float = 1.0,
+                 params: PlantParams | None = None) -> None:
+        self.engine = SimulationEngine(seed, params)
+        self.twin = GridTwin(params)
         self.detector = ThresholdDetector()
         self.incidents = IncidentManager()
         self.store = EventStore(db_path)
         self.tick_seconds = tick_seconds
+        self.district: str | None = None  # set when this unit is one district of the city
         self.subscribers: set[asyncio.Queue] = set()
         self._task: asyncio.Task | None = None
 
@@ -37,6 +40,7 @@ class Runtime:
         messages.append({"type": "twin", "data": twin.model_dump()})
         messages.append({"type": "scores", "data": scores.model_dump()})
         if inc is not None:
+            inc.district = self.district
             messages.append({"type": "incident", "data": inc.model_dump()})
         for m in messages:
             self.store.append(m["type"], r.telemetry.t, m["data"])

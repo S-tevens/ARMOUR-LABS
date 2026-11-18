@@ -65,6 +65,8 @@ export interface Incident {
   scores: Record<string, number>;
   evidence: Evidence[];
   status: "open" | "responding" | "recovering" | "recovered" | "unresolved";
+  district?: string | null; // substation incidents: which district
+  campaign_id?: string | null; // city incidents spanning several districts
 }
 
 export interface ScenarioInfo {

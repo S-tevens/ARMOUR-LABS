@@ -62,6 +62,8 @@ h2 { margin: 0; font-size: 15px; font-weight: 500; }
 .state.st-incident { color: var(--red); }
 .state.st-incident i { background: var(--red); animation: pulse 1.4s infinite; }
 .state.st-offline { color: var(--slate); }
+.state.st-attention { color: #c98310; }
+.state.st-attention i { background: var(--amber); }
 .state.st-offline i { background: #aab4cc; }
 .error { background: #fff1f1; color: #a32a2e; border: 1px solid #f4c4c6; padding: 10px 14px; border-radius: var(--r-md); margin-bottom: 14px; }
 
@@ -121,6 +123,8 @@ table.mini tr + tr td { border-top: 1px solid rgba(120, 140, 185, 0.12); }
 .pipe-flow { fill: none; stroke: var(--blue); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 3 14; animation: flow linear infinite; }
 .pipe-flow.blocked { stroke: var(--red); }
 .pipe-flow.rev { animation-direction: reverse; }
+.pipe-flow.hot { stroke: var(--amber); }
+.pipe-base.trip { stroke: #f3c2c4; stroke-dasharray: 4 6; }
 .pipe-base.off { stroke: #eceff6; stroke-dasharray: 3 6; }
 .floor-line { fill: none; stroke: rgba(120, 140, 185, 0.16); stroke-width: 1; }
 @keyframes flow { to { stroke-dashoffset: -17; } }
@@ -243,4 +247,64 @@ tr.row-bad td { background: rgba(229, 72, 77, 0.06); }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* ---------------- city layer ---------------- */
+.crumbs { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--slate); padding: 0 6px; }
+.crumbs button { border: 0; background: transparent; color: var(--blue); font: inherit; font-weight: 500; cursor: pointer; padding: 2px 0; }
+.crumbs b { color: var(--ink); font-weight: 500; }
+.section-title { margin: 4px 6px 0; font-size: 13px; font-weight: 500; color: var(--slate); }
+
+.cityview { display: flex; flex-direction: column; gap: 16px; }
+.citystage { display: grid; grid-template-columns: 290px minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.happening { padding: 18px 16px; display: flex; flex-direction: column; gap: 12px; }
+.hlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.hlist li { display: grid; grid-template-columns: 10px 1fr; gap: 10px; align-items: start; padding: 8px 6px; border-radius: 10px; font-size: 13px; line-height: 1.4; }
+.hlist li i { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; background: #8fa0c6; }
+.hlist li.critical i { background: var(--red); } .hlist li.warn i { background: var(--amber); } .hlist li.info i { background: var(--blue); }
+.hlist li.critical { background: rgba(229, 72, 77, 0.06); }
+.hlist button { border: 0; background: transparent; padding: 0; font: inherit; color: inherit; text-align: left; cursor: pointer; }
+.hlist button:hover { color: var(--blue); }
+.all-clear { display: flex; align-items: center; gap: 10px; margin: 0; font-size: 13px; color: var(--ink); }
+.more { margin: 0; padding-left: 6px; }
+
+.mapwrap { position: relative; border-radius: var(--r-lg); min-height: 380px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.mapwrap::before { content: ""; position: absolute; inset: 0; background: radial-gradient(70% 60% at 50% 50%, rgba(255, 255, 255, 0.75), transparent 75%); pointer-events: none; transition: background 0.6s; }
+.mapwrap.alarm::before { background: radial-gradient(70% 60% at 50% 55%, rgba(229, 72, 77, 0.13), transparent 75%); }
+.citymap { position: relative; width: 100%; height: auto; display: block; }
+.tile { cursor: pointer; outline: none; }
+.tile:focus-visible polygon:nth-of-type(2) { stroke: var(--blue); stroke-width: 3; }
+.tile:hover polygon:nth-of-type(2) { stroke: var(--blue); }
+.tile-label { fill: var(--ink); font-size: 13px; font-weight: 500; }
+.tile-label.bad { fill: #b52a2f; }
+.tile-label.sel { fill: var(--blue); font-weight: 600; }
+.tile-label.muted { fill: var(--slate); font-size: 12px; font-weight: 400; }
+.mapwrap .alert { top: 12px; }
+.legend-map { position: absolute; right: 14px; bottom: 12px; display: flex; gap: 14px; margin: 0; padding: 7px 12px; list-style: none; font-size: 12px; color: var(--slate); background: rgba(255, 255, 255, 0.65); border-radius: 999px; }
+.legend-map li { display: flex; align-items: center; gap: 6px; }
+.dot.amber { background: var(--amber); }
+.flowkey { display: inline-block; width: 18px; height: 3px; border-radius: 2px; background: repeating-linear-gradient(90deg, var(--blue) 0 4px, transparent 4px 8px); }
+
+.cityside { display: flex; flex-direction: column; gap: 16px; }
+.cityside .sim { position: static; width: auto; }
+.dcard, .rcard { padding: 18px 16px; display: flex; flex-direction: column; gap: 10px; }
+.dsub { margin: 0; }
+.facs { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.facs li { display: flex; justify-content: space-between; align-items: center; padding: 8px 2px; font-size: 13px; border-top: 1px solid var(--line); }
+.facs li:first-child { border-top: 0; }
+.pill.warn { background: var(--amber); color: #fff; }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.checks li { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; font-size: 13px; }
+.checks li i { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid #c3cde2; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 10px; color: #fff; margin-top: 1px; }
+.checks li.ok i { background: var(--green); border-color: var(--green); }
+.checks small { display: block; color: var(--slate); font-size: 12px; }
+.actions { list-style: none; margin: 0; padding: 10px 0 0; border-top: 1px solid var(--line); display: grid; gap: 4px; font-size: 12px; color: var(--slate); }
+.rcard.recovered { border-color: rgba(43, 179, 106, 0.5); }
+
+@media (max-width: 1200px) {
+  .citystage { grid-template-columns: 270px minmax(0, 1fr); }
+  .cityside { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); align-items: start; }
+}
+@media (max-width: 800px) {
+  .citystage { grid-template-columns: 1fr; }
 }

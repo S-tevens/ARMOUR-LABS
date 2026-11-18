@@ -11,7 +11,9 @@ export default function SimulatorCard({
   scenarios,
   onStart,
   onStop,
+  title = "Simulator",
 }: {
+  title?: string;
   scenarios: ScenarioInfo[];
   onStart: (name: string) => void;
   onStop: () => void;
@@ -23,7 +25,7 @@ export default function SimulatorCard({
 
   return (
     <section className="sim glass" aria-label="Attack simulator">
-      <h2>Simulator</h2>
+      <h2>{title}</h2>
       <p className="hint">Runs inside the simulation only.</p>
       <div className="sim-buttons">
         {core.map((s) => (

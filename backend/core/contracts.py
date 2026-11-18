@@ -89,3 +89,5 @@ class Incident(BaseModel):
     scores: dict[str, float]
     evidence: list[Evidence]
     status: Literal["open", "responding", "recovering", "recovered", "unresolved"]
+    district: str | None = None  # substation incidents: which district's substation
+    campaign_id: str | None = None  # city incidents spanning several districts share a campaign id

@@ -8,6 +8,8 @@ ARMOUR LABS protects a **campus microgrid substation**: a utility feed, solar ar
 
 Unlike an intrusion-detection dashboard that only lists alerts, ARMOUR LABS connects a cyber event to its physical consequence: "someone opened the hospital's breaker" becomes "the hospital feeder is de-energised, the battery is absorbing the lost load, and the command did not come from SCADA".
 
+**It scales from one substation to a city.** The **City** view is a Bengaluru-inspired network of 8 districts (a fictional network, not real utility data). It shows where a cyberattack hits, how bad it is in plain terms (people without power, hospitals on backup), how a failure cascades through the grid, and how power is restored hospitals first. Click any district to drop into its detailed substation.
+
 **Everything runs in simulation.** The substation, the network and every attack scenario exist only inside an isolated software simulation. Nothing connects to real relays, grids or external systems.
 
 ## Why a microgrid substation
@@ -26,8 +28,9 @@ This is the base project: a working end-to-end system you can run today.
 | Model-based, independent digital twin (authorised command log as its only command input) | Working (v0: hand-set parameters, to be fitted and tuned) |
 | FastAPI backend with a WebSocket stream and an append-only SQLite event log | Working |
 | Live dashboard (isometric substation, relays, twin chart, detector scores, network graph, incidents) | Working |
+| **City layer:** 8-district fictional network, linear power flow, line overloads and cascades, facilities with hospital backup timers, impact counters, 6 city scenarios, priority restoration, city twin, rule-based classification and campaign grouping, recovery verification | Working |
 | Threshold baseline detector | Working (baseline only) |
-| Incident classification (attack, fault, unknown) | Placeholder: always "unknown" |
+| Incident classification (attack, fault, unknown) | City: rule-based v0 (executable rule table). Substation: placeholder, always "unknown" |
 | ML detector (Isolation Forest), physics checks, evidence fusion, evaluation and `/metrics` | Not built yet |
 
 Placeholders are marked `PLACEHOLDER` or `TODO` in the code. The detector scores shown in the dashboard come from the baseline and are **not measured results**.
@@ -98,7 +101,11 @@ Open **http://localhost:5173** in your browser. The status pill at the top right
 
 ### 5. Try the demo
 
-1. On the **Dashboard** tab, find the **Simulator** card on the substation view.
+**Start with the City tab.** In the **City simulator** card, run **Coordinated substation trip**. Within seconds the status turns red: three districts go dark with red outlines, the headline strip shows how many people are without power and how many hospitals are on backup, and "What's happening" lists the likely cause and the most urgent consequences in plain sentences. Click **Approve containment**: the source is blocked and districts are restored hospitals first, with a live checklist; the city is marked **Recovered** only after every check holds for 10 seconds. Also try **Load-altering attack**, which overloads lines and cascades into a wider blackout that is restored in stages. The look-alikes (**Planned line maintenance**, **Hot-evening demand peak**) raise no incident, and **Line fault** is classified as equipment, not an attack. Backup time and energy run accelerated (1 second is 1 minute).
+
+**Then drill down.** Click a district and choose **Open substation view** for its detailed microgrid:
+
+1. On the **Substation** tab, find the **Simulator** card on the substation view.
 2. Click **Unauthorised breaker trip**. Within a few seconds the status turns to **Incident in progress**: the hospital building greys out with a red outline, its breaker CB-CRIT opens, IED-03 shows **Compromised**, and the battery starts absorbing the lost load. The callout quotes the unauthorised command and its source.
 3. Click **Approve containment**. The response runs in stages (block the source, hold the battery, reclose the hospital breaker first, return to automatic control).
 4. The incident is marked **Recovered** only after frequency, voltage, import, battery charge and hospital load have stayed within limits with all breakers closed for 10 seconds.
@@ -123,7 +130,7 @@ Press `Ctrl+C` in each terminal.
 
 ```bash
 cd backend
-python -m pytest            # backend: 30 tests
+python -m pytest            # backend: 46 tests
 cd ../frontend
 npm run build               # frontend: type-check and production build
 ```
@@ -233,14 +240,17 @@ backend/
   incident/           incident manager (placeholder classification)
   db/                 append-only SQLite event log
   api/                FastAPI app, WebSocket stream, runtime
+  city/               city model: layout, power flow, engine, scenarios, containment, recovery, twin, detection
   tests/              backend tests
-frontend/             React + TypeScript dashboard
+frontend/             React + TypeScript dashboard (src/city/ is the city view)
 data/                 dataset notes (generated files are not committed)
 docs/contracts.md     message and API contracts
 ```
 
 ## Documents
 
+- [ARMOUR_LABS_CITY_LAYER_PLAN.md](ARMOUR_LABS_CITY_LAYER_PLAN.md): the city layer plan, with per-person tasks and the frontend clarity rules.
+- [docs/city-contracts.md](docs/city-contracts.md): city messages and endpoints.
 - [ARMOUR_LABS_PROJECT_DESCRIPTION.md](ARMOUR_LABS_PROJECT_DESCRIPTION.md): the full project description.
 - [ARMOUR_LABS_MVP_BUILD_PLAN.md](ARMOUR_LABS_MVP_BUILD_PLAN.md): builds, acceptance checks and risks.
 - [ARMOUR_LABS_TASK_DISTRIBUTION.md](ARMOUR_LABS_TASK_DISTRIBUTION.md): who builds what.

@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import math
 from collections import deque
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -41,22 +42,42 @@ LOAD_NC_BASE, LOAD_NC_AMP, LOAD_NC_PHASE = 300.0, 40.0, 1.0
 LOAD_PERIOD_S = 600.0
 IRR_BASE, IRR_AMP, IRR_PERIOD_S = 750.0, 150.0, 900.0  # W/m2
 CLOUD_LAG = 0.1
+
+
+@dataclass(frozen=True)
+class PlantParams:
+    """Sizes of one substation. Defaults are the original campus microgrid; the city layer scales them per district."""
+
+    load_crit_base: float = LOAD_CRIT_BASE
+    load_crit_amp: float = LOAD_CRIT_AMP
+    load_nc_base: float = LOAD_NC_BASE
+    load_nc_amp: float = LOAD_NC_AMP
+    pv_rated_kw: float = PV_RATED_KW
+    bess_pmax_kw: float = BESS_PMAX_KW
+    bess_cap_kwh: float = BESS_CAP_KWH
+    import_target_kw: float = IMPORT_TARGET_KW
+    load_phase: float = 0.0  # shifts the load profiles so districts differ
+
+
 BREAKERS = ("cb_main", "cb_pv", "cb_bess", "cb_crit", "cb_nc")
 # Measurements an attacker can record and replay.
 REPLAY_FIELDS = ("frequency", "bus_voltage", "grid_import_kw", "load_critical_kw", "load_noncritical_kw")
 
 
 class Plant:
-    def __init__(self, seed: int = 42) -> None:
+    def __init__(self, seed: int = 42, params: PlantParams | None = None) -> None:
         self.seed = seed
+        self.p = params or PlantParams()
         self.rng = np.random.default_rng(seed)
         self.t = 0.0
         self.tick = 0
         # switchgear and set-points
         self.breakers: dict[str, bool] = {b: True for b in BREAKERS}  # True = closed
         self.stuck: set[str] = set()  # breakers that ignore commands (mechanical fault)
-        self.import_target = IMPORT_TARGET_KW
+        self.import_target = self.p.import_target_kw
         self.bess_mode = "AUTO"  # AUTO | HOLD
+        self.load_scale = 1.0  # demand multiplier (city-level events, e.g. an evening peak or a load-altering attack)
+        self.grid_available = True  # False when the city network can no longer supply this substation
         # physical state
         self.freq = F_NOM
         self.volt = V_NOM
@@ -89,8 +110,8 @@ class Plant:
     def start_replay(self, window: int = 30) -> None:
         """Report previously recorded readings instead of live ones."""
         hist = list(self._obs_hist)[-window:] or [
-            {"frequency": F_NOM, "bus_voltage": V_NOM, "grid_import_kw": 320.0,
-             "load_critical_kw": LOAD_CRIT_BASE, "load_noncritical_kw": LOAD_NC_BASE}
+            {"frequency": F_NOM, "bus_voltage": V_NOM, "grid_import_kw": self.p.import_target_kw,
+             "load_critical_kw": self.p.load_crit_base, "load_noncritical_kw": self.p.load_nc_base}
         ]
         self.replay = {f: [h[f] for h in hist] for f in REPLAY_FIELDS}
         self.replay["i"] = 0
@@ -104,7 +125,7 @@ class Plant:
         """Hard reset: normal switching lineup, faults repaired, sensors clean."""
         self.breakers = {b: True for b in BREAKERS}
         self.stuck.clear()
-        self.import_target = IMPORT_TARGET_KW
+        self.import_target = self.p.import_target_kw
         self.bess_mode = "AUTO"
         self.cloud_target = 1.0
         self.pv_inverter_ok = True
@@ -118,15 +139,18 @@ class Plant:
         irr_clear = IRR_BASE + IRR_AMP * math.sin(2.0 * math.pi * t / IRR_PERIOD_S)
         self.cloud += (self.cloud_target - self.cloud) * CLOUD_LAG
         self.irradiance = irr_clear * self.cloud
-        self.pv = PV_RATED_KW * self.irradiance / 1000.0 if (b["cb_pv"] and self.pv_inverter_ok) else 0.0
-        phase = 2.0 * math.pi * t / LOAD_PERIOD_S
-        self.load_crit = LOAD_CRIT_BASE + LOAD_CRIT_AMP * math.sin(phase) if b["cb_crit"] else 0.0
-        self.load_nc = LOAD_NC_BASE + LOAD_NC_AMP * math.sin(phase + LOAD_NC_PHASE) if b["cb_nc"] else 0.0
+        self.pv = self.p.pv_rated_kw * self.irradiance / 1000.0 if (b["cb_pv"] and self.pv_inverter_ok) else 0.0
+        phase = 2.0 * math.pi * t / LOAD_PERIOD_S + self.p.load_phase
+        crit = self.p.load_crit_base + self.p.load_crit_amp * math.sin(phase)
+        nc = self.p.load_nc_base + self.p.load_nc_amp * math.sin(phase + LOAD_NC_PHASE)
+        self.load_crit = crit * self.load_scale if b["cb_crit"] else 0.0
+        self.load_nc = nc * self.load_scale if b["cb_nc"] else 0.0
         load = self.load_crit + self.load_nc
 
         # energy management system: reads the REPORTED frequency
         f_reported = self.freq + self.sensor_bias["frequency"]
-        if b["cb_main"]:
+        connected = b["cb_main"] and self.grid_available
+        if connected:
             target = self.import_target + SOC_GAIN_KW_PER_PCT * (SOC_TARGET - self.soc)
             dev = F_NOM - f_reported
             droop = 0.0 if abs(dev) < DROOP_DEADBAND_HZ else DROOP_KW_PER_HZ * dev
@@ -135,7 +159,7 @@ class Plant:
             want = load - self.pv  # islanded: the battery forms the grid
         if not b["cb_bess"] or self.bess_mode != "AUTO":
             want = 0.0
-        want = float(np.clip(want, -BESS_PMAX_KW, BESS_PMAX_KW))
+        want = float(np.clip(want, -self.p.bess_pmax_kw, self.p.bess_pmax_kw))
         if self.soc <= 10.0:
             want = min(want, 0.0)
         if self.soc >= 95.0:
@@ -143,9 +167,9 @@ class Plant:
         self.bess_kw += (want - self.bess_kw) * BESS_LAG
         if not b["cb_bess"]:
             self.bess_kw = 0.0
-        self.soc = float(np.clip(self.soc - self.bess_kw * dt / (BESS_CAP_KWH * 3600.0) * 100.0, 0.0, 100.0))
+        self.soc = float(np.clip(self.soc - self.bess_kw * dt / (self.p.bess_cap_kwh * 3600.0) * 100.0, 0.0, 100.0))
 
-        if b["cb_main"]:
+        if connected:
             self.grid_import = load - self.pv - self.bess_kw
             self.freq = F_NOM  # the utility holds the frequency
             self.volt = V_NOM - 0.00003 * (self.grid_import - 300.0)
@@ -169,7 +193,9 @@ class Plant:
             and self.pv_inverter_ok
             and abs(self.cloud - 1.0) < 0.05
             and self.bess_mode == "AUTO"
-            and self.import_target == IMPORT_TARGET_KW
+            and self.import_target == self.p.import_target_kw
+            and self.load_scale == 1.0
+            and self.grid_available
             and all(abs(v) < 1e-9 for v in self.sensor_bias.values())
         )
 

@@ -20,6 +20,7 @@ import math
 import numpy as np
 
 from core.contracts import NetworkEvent, Telemetry, TwinState
+from sim.plant import PlantParams
 
 # The twin's own parameters (intentionally not identical to the simulator's).
 PV_RATED_KW = 500.0
@@ -51,9 +52,18 @@ REGISTER_TO_BREAKER = {"CB_MAIN": "cb_main", "CB_PV": "cb_pv", "CB_BESS": "cb_be
 
 
 class GridTwin:
-    def __init__(self) -> None:
+    def __init__(self, params: PlantParams | None = None) -> None:
+        # The twin's own parameters: the substation's sizes (which operators know), with its own small modelling errors.
+        p = params or PlantParams()
+        self.pv_rated = p.pv_rated_kw
+        self.crit_base, self.crit_amp = p.load_crit_base * (401.0 / 400.0), p.load_crit_amp * (28.0 / 30.0)
+        self.nc_base, self.nc_amp = p.load_nc_base * (299.0 / 300.0), p.load_nc_amp * (42.0 / 40.0)
+        self.pmax = p.bess_pmax_kw
+        self.cap = p.bess_cap_kwh * (205.0 / 200.0)
+        self.load_phase = p.load_phase
+        self.demand_factor = 1.0  # the demand FORECAST (a schedule, like the clock); attacks do not change it
         self.breakers = {b: True for b in BREAKER_FIELDS}  # EXPECTED states, from authorised commands only
-        self.import_target = DEFAULT_IMPORT_TARGET_KW
+        self.import_target = p.import_target_kw
         self.bess_mode = "AUTO"
         self.bess_kw = 0.0
         self.soc = SOC_TARGET
@@ -75,10 +85,10 @@ class GridTwin:
     def compute(self, obs: Telemetry) -> TwinState:
         b = self.breakers
         t = obs.t - 1.0  # the simulator evaluates its profiles one tick before it reports
-        phase = 2.0 * math.pi * t / LOAD_PERIOD_S
-        pv = PV_RATED_KW * obs.irradiance / 1000.0 * PV_EFF if b["cb_pv"] else 0.0
-        crit = LOAD_CRIT_BASE + LOAD_CRIT_AMP * math.sin(phase) if b["cb_crit"] else 0.0
-        nc = LOAD_NC_BASE + LOAD_NC_AMP * math.sin(phase + LOAD_NC_PHASE) if b["cb_nc"] else 0.0
+        phase = 2.0 * math.pi * t / LOAD_PERIOD_S + self.load_phase
+        pv = self.pv_rated * obs.irradiance / 1000.0 * PV_EFF if b["cb_pv"] else 0.0
+        crit = (self.crit_base + self.crit_amp * math.sin(phase)) * self.demand_factor if b["cb_crit"] else 0.0
+        nc = (self.nc_base + self.nc_amp * math.sin(phase + LOAD_NC_PHASE)) * self.demand_factor if b["cb_nc"] else 0.0
         load = crit + nc
 
         if b["cb_main"]:
@@ -88,7 +98,7 @@ class GridTwin:
             want = load - pv
         if not b["cb_bess"] or self.bess_mode != "AUTO":
             want = 0.0
-        want = float(np.clip(want, -BESS_PMAX_KW, BESS_PMAX_KW))
+        want = float(np.clip(want, -self.pmax, self.pmax))
         if self.soc <= 10.0:
             want = min(want, 0.0)
         if self.soc >= 95.0:
@@ -96,7 +106,7 @@ class GridTwin:
         self.bess_kw += (want - self.bess_kw) * BESS_LAG
         if not b["cb_bess"]:
             self.bess_kw = 0.0
-        self.soc = float(np.clip(self.soc - self.bess_kw / (BESS_CAP_KWH * 3600.0) * 100.0, 0.0, 100.0))
+        self.soc = float(np.clip(self.soc - self.bess_kw / (self.cap * 3600.0) * 100.0, 0.0, 100.0))
 
         if b["cb_main"]:
             grid = load - pv - self.bess_kw

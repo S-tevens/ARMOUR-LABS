@@ -3,6 +3,10 @@ import type { Incident, ScenarioInfo } from "./types";
 export const API_URL: string = import.meta.env.VITE_API_URL ?? "http://localhost:8000";
 export const WS_URL: string = API_URL.replace(/^http/, "ws") + "/ws/telemetry";
 
+/** `?district=<id>` selects a district's substation; omitted means the featured district. */
+export const districtQuery = (district?: string) => (district ? `?district=${district}` : "");
+export const telemetryUrl = (district?: string) => WS_URL + districtQuery(district);
+
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(API_URL + path, init);
   if (!res.ok) throw new Error(`${path}: ${res.status}`);
@@ -17,6 +21,8 @@ const post = (path: string, body?: unknown) =>
   });
 
 export const getScenarios = () => call<ScenarioInfo[]>("/scenarios");
-export const startScenario = (name: string) => post("/scenario/start", { name });
-export const stopScenario = () => post("/scenario/stop");
-export const approveResponse = (id: string) => post(`/incident/${id}/approve-response`) as Promise<Incident>;
+export const getIncidents = (district?: string) => call<Incident[]>(`/incidents${districtQuery(district)}`);
+export const startScenario = (name: string, district?: string) => post(`/scenario/start${districtQuery(district)}`, { name });
+export const stopScenario = (district?: string) => post(`/scenario/stop${districtQuery(district)}`);
+export const approveResponse = (id: string, district?: string) =>
+  post(`/incident/${id}/approve-response${districtQuery(district)}`) as Promise<Incident>;
