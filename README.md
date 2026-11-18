@@ -259,6 +259,7 @@ docs/contracts.md     message and API contracts
 
 ## Documents
 
+- [research_draft.md](research_draft.md): how the project relates to the research paper (what we took, changed and added), our results and limitations.
 - [docs/city-3d.md](docs/city-3d.md): the 3D city map, its data sources and limits.
 - [docs/evaluation.md](docs/evaluation.md): detectors, evaluation protocol and what the numbers do not show.
 - [ARMOUR_LABS_CITY_LAYER_PLAN.md](ARMOUR_LABS_CITY_LAYER_PLAN.md): the city layer plan, with per-person tasks and the frontend clarity rules.
